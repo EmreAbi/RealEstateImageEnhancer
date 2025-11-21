@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
         if (session?.user) {
           console.log('✅ Setting user:', session.user.id)
           setUser(session.user)
+          setLoading(false) // Set loading false immediately when user is known
           try {
             const userProfile = await getUserProfile(session.user.id)
             setProfile(userProfile)
@@ -61,8 +62,8 @@ export const AuthProvider = ({ children }) => {
           console.log('⚠️ Clearing user state')
           setUser(null)
           setProfile(null)
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
 
