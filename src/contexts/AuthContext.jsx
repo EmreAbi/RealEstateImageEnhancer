@@ -79,29 +79,31 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, username, realEstateOffice) => {
     try {
-      const { user: authUser } = await signUp(email, password, {
+      const { data, error } = await signUp(email, password, {
         username,
         real_estate_office: realEstateOffice
       })
 
-      if (authUser) {
-        // Create profile
-        const { data: newProfile, error: profileError } = await supabase
-          .from('profiles')
-          .insert([{
-            id: authUser.id,
-            username,
-            real_estate_office: realEstateOffice,
-            email
-          }])
-          .select()
-          .single()
+      if (error) throw error
 
-        if (profileError) throw profileError
+      if (data?.user) {
+        // Profile is automatically created by database trigger
+        // Wait a bit for the trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
-        setUser(authUser)
-        setProfile(newProfile)
-        return { user: authUser, profile: newProfile }
+        // Fetch the created profile
+        try {
+          const userProfile = await getUserProfile(data.user.id)
+          setUser(data.user)
+          setProfile(userProfile)
+          return { user: data.user, profile: userProfile }
+        } catch (profileError) {
+          // Profile might not be created yet, that's okay
+          // User can still proceed, profile will load on next login
+          console.warn('Profile not loaded immediately:', profileError)
+          setUser(data.user)
+          return { user: data.user, profile: null }
+        }
       }
     } catch (error) {
       console.error('Registration error:', error)
