@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import {
   getFolders,
@@ -38,42 +38,14 @@ export const ImageProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
 
-  // Load folders and images when user changes
-  useEffect(() => {
-    console.log('🔄 ImageContext useEffect triggered', {
-      userId: user?.id || 'NO USER',
-      authLoading,
-      hasInitialized
-    })
-
-    // Don't do anything while auth is still loading
-    if (authLoading) {
-      console.log('⏳ Auth still loading, waiting...')
+  // Load data function wrapped in useCallback to ensure stable reference
+  const loadData = useCallback(async () => {
+    if (!user?.id) {
+      console.log('⚠️ loadData called without user, skipping...')
       return
     }
 
-    if (user?.id) {
-      console.log('✅ User exists, loading data...')
-      loadData()
-      setHasInitialized(true)
-    } else if (hasInitialized) {
-      // Only reset state if we had initialized before (user logged out)
-      // Don't reset during initial page load
-      console.log('⚠️ User logged out, resetting state...')
-      setFolders([])
-      setImages([])
-      setAiModels([])
-      setSelectedFolder(null)
-      setSelectedImages([])
-      setSelectedAIModel(null)
-      setHasInitialized(false)
-    } else {
-      console.log('⏸️ No user and not initialized yet, skipping...')
-    }
-  }, [user, authLoading])
-
-  const loadData = async () => {
-    console.log('🔄 Loading data for user:', user?.id)
+    console.log('🔄 Loading data for user:', user.id)
     try {
       setLoading(true)
       console.log('🟡 Fetching data from Supabase...')
@@ -107,7 +79,44 @@ export const ImageProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user, selectedAIModel])
+
+  // Load folders and images when user changes
+  useEffect(() => {
+    console.log('🔄 ImageContext useEffect triggered', {
+      userId: user?.id || 'NO USER',
+      authLoading,
+      hasInitialized
+    })
+
+    // Don't do anything while auth is still loading
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...')
+      return
+    }
+
+    if (user?.id) {
+      console.log('✅ User exists, loading data...')
+      loadData()
+      if (!hasInitialized) {
+        setHasInitialized(true)
+      }
+    } else if (hasInitialized) {
+      // Only reset state if we had initialized before (user logged out)
+      // Don't reset during initial page load
+      console.log('⚠️ User logged out, resetting state...')
+      setFolders([])
+      setImages([])
+      setAiModels([])
+      setSelectedFolder(null)
+      setSelectedImages([])
+      setSelectedAIModel(null)
+      setHasInitialized(false)
+    } else {
+      console.log('⏸️ No user and not initialized yet, skipping...')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, loadData])
 
   const addFolder = async (name, color = '#0ea5e9') => {
     console.log('🟢 addFolder called with:', { name, color, userId: user?.id })
