@@ -1,25 +1,40 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Building2, User, Sparkles, ImagePlus, Zap, Shield } from 'lucide-react'
+import { Building2, User, Sparkles, ImagePlus, Zap, Shield, Mail, Lock } from 'lucide-react'
 
 export default function Login() {
+  const [isRegister, setIsRegister] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [realEstateOffice, setRealEstateOffice] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const [error, setError] = useState('')
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!username || !realEstateOffice) return
+    setError('')
+
+    if (!email || !password) return
+    if (isRegister && (!username || !realEstateOffice)) return
 
     setLoading(true)
     try {
-      await login(username, realEstateOffice)
+      if (isRegister) {
+        await register(email, password, username, realEstateOffice)
+      } else {
+        await login(email, password)
+      }
       navigate('/dashboard')
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error('Authentication failed:', error)
+      setError(
+        error.message ||
+        (isRegister ? 'Kayıt başarısız. Lütfen tekrar deneyin.' : 'Giriş başarısız. Email ve şifrenizi kontrol edin.')
+      )
     } finally {
       setLoading(false)
     }
@@ -112,58 +127,110 @@ export default function Login() {
           <div className="card p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Hoş Geldiniz
+                {isRegister ? 'Hesap Oluştur' : 'Hoş Geldiniz'}
               </h2>
               <p className="text-gray-600">
-                Devam etmek için giriş yapın
+                {isRegister ? 'Yeni hesap oluşturun' : 'Devam etmek için giriş yapın'}
               </p>
             </div>
 
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Real Estate Office Input */}
+              {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Emlak Ofisi
+                  Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Building2 className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="text"
-                    value={realEstateOffice}
-                    onChange={(e) => setRealEstateOffice(e.target.value)}
-                    placeholder="Örn: Lüks Gayrimenkul A.Ş."
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="ornek@email.com"
                     className="input-field pl-12"
                     required
                   />
                 </div>
               </div>
 
-              {/* Username Input */}
+              {/* Password Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Kullanıcı Adı
+                  Şifre
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Kullanıcı adınız"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="********"
                     className="input-field pl-12"
                     required
+                    minLength={6}
                   />
                 </div>
               </div>
+
+              {/* Register-only fields */}
+              {isRegister && (
+                <>
+                  {/* Username Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kullanıcı Adı
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Kullanıcı adınız"
+                        className="input-field pl-12"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Real Estate Office Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Emlak Ofisi
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Building2 className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={realEstateOffice}
+                        onChange={(e) => setRealEstateOffice(e.target.value)}
+                        placeholder="Örn: Lüks Gayrimenkul A.Ş."
+                        className="input-field pl-12"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading || !username || !realEstateOffice}
+                disabled={loading}
                 className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -184,16 +251,26 @@ export default function Login() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Giriş Yapılıyor...
+                    {isRegister ? 'Hesap Oluşturuluyor...' : 'Giriş Yapılıyor...'}
                   </span>
                 ) : (
-                  'Giriş Yap'
+                  isRegister ? 'Hesap Oluştur' : 'Giriş Yap'
                 )}
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Demo için herhangi bir bilgi girebilirsiniz</p>
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setIsRegister(!isRegister)
+                  setError('')
+                }}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                {isRegister
+                  ? 'Zaten hesabınız var mı? Giriş yapın'
+                  : 'Hesabınız yok mu? Kayıt olun'}
+              </button>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { supabase, signIn, signUp, signOut, getUserProfile } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -12,42 +13,142 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    // Check for existing session
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (session?.user) {
+          setUser(session.user)
+          // Load user profile
+          const userProfile = await getUserProfile(session.user.id)
+          setProfile(userProfile)
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+
+    initAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user)
+          try {
+            const userProfile = await getUserProfile(session.user.id)
+            setProfile(userProfile)
+          } catch (error) {
+            console.error('Error loading profile:', error)
+          }
+        } else {
+          setUser(null)
+          setProfile(null)
+        }
+        setLoading(false)
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const login = async (username, realEstateOffice) => {
-    // Dummy login - replace with actual API call later
-    const userData = {
-      id: Date.now(),
-      username,
-      realEstateOffice,
-      email: `${username}@${realEstateOffice.toLowerCase().replace(/\s/g, '')}.com`,
-      createdAt: new Date().toISOString()
-    }
+  const login = async (email, password) => {
+    try {
+      const { user: authUser, session } = await signIn(email, password)
 
-    setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
-    return userData
+      if (authUser) {
+        const userProfile = await getUserProfile(authUser.id)
+        setUser(authUser)
+        setProfile(userProfile)
+        return { user: authUser, profile: userProfile }
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
+  const register = async (email, password, username, realEstateOffice) => {
+    try {
+      const { user: authUser } = await signUp(email, password, {
+        username,
+        real_estate_office: realEstateOffice
+      })
+
+      if (authUser) {
+        // Create profile
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: authUser.id,
+            username,
+            real_estate_office: realEstateOffice,
+            email
+          }])
+          .select()
+          .single()
+
+        if (profileError) throw profileError
+
+        setUser(authUser)
+        setProfile(newProfile)
+        return { user: authUser, profile: newProfile }
+      }
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await signOut()
+      setUser(null)
+      setProfile(null)
+    } catch (error) {
+      console.error('Logout error:', error)
+      throw error
+    }
+  }
+
+  const updateProfile = async (updates) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setProfile(data)
+      return data
+    } catch (error) {
+      console.error('Profile update error:', error)
+      throw error
+    }
   }
 
   const value = {
     user,
+    profile,
     login,
+    register,
     logout,
-    loading
+    updateProfile,
+    loading,
+    // Legacy support - mevcut Login component uyumluluğu için
+    user: profile || user
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
