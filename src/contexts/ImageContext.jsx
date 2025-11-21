@@ -39,9 +39,12 @@ export const ImageProvider = ({ children }) => {
 
   // Load folders and images when user changes
   useEffect(() => {
+    console.log('🔄 ImageContext useEffect triggered, user:', user?.id || 'NO USER')
     if (user?.id) {
+      console.log('✅ User exists, loading data...')
       loadData()
     } else {
+      console.log('⚠️ No user, resetting state...')
       // Reset state when user logs out
       setFolders([])
       setImages([])
@@ -68,10 +71,13 @@ export const ImageProvider = ({ children }) => {
         images: imagesData?.length,
         models: modelsData?.length
       })
+      console.log('📁 Folders data:', foldersData)
 
       setFolders(foldersData || [])
       setImages(imagesData || [])
       setAiModels(modelsData || [])
+
+      console.log('✅ State updated with fetched data')
 
       // Set default AI model
       if (modelsData && modelsData.length > 0 && !selectedAIModel) {
