@@ -18,27 +18,46 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     console.log('🔐 AuthContext initializing...')
+    let mounted = true
+
     // Check for existing session
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('🔍 Getting session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('❌ Session error:', error)
+          throw error
+        }
+
         console.log('🔍 Session check result:', session ? 'Session exists' : 'No session')
 
-        if (session?.user) {
+        if (mounted && session?.user) {
           console.log('✅ User found in session:', session.user.id)
           setUser(session.user)
           // Load user profile
-          const userProfile = await getUserProfile(session.user.id)
-          setProfile(userProfile)
-          console.log('✅ Profile loaded')
-        } else {
+          try {
+            const userProfile = await getUserProfile(session.user.id)
+            if (mounted) {
+              setProfile(userProfile)
+              console.log('✅ Profile loaded')
+            }
+          } catch (profileError) {
+            console.error('⚠️ Profile load error:', profileError)
+            // Continue anyway, user is authenticated
+          }
+        } else if (!session) {
           console.log('⚠️ No user in session')
         }
       } catch (error) {
         console.error('❌ Error initializing auth:', error)
       } finally {
-        setLoading(false)
-        console.log('✅ Auth initialization complete, loading:', false)
+        if (mounted) {
+          console.log('✅ Setting loading to false')
+          setLoading(false)
+          console.log('✅ Auth initialization complete')
+        }
       }
     }
 
@@ -48,13 +67,17 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔔 Auth state changed:', event, session ? 'Has session' : 'No session')
+
+        if (!mounted) return
+
         if (session?.user) {
           console.log('✅ Setting user:', session.user.id)
           setUser(session.user)
-          setLoading(false) // Set loading false immediately when user is known
           try {
             const userProfile = await getUserProfile(session.user.id)
-            setProfile(userProfile)
+            if (mounted) {
+              setProfile(userProfile)
+            }
           } catch (error) {
             console.error('Error loading profile:', error)
           }
@@ -62,12 +85,12 @@ export const AuthProvider = ({ children }) => {
           console.log('⚠️ Clearing user state')
           setUser(null)
           setProfile(null)
-          setLoading(false)
         }
       }
     )
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
     }
   }, [])
