@@ -23,11 +23,13 @@ export default function Header({ onToggleSidebar, onUpload }) {
   const handleLogout = async () => {
     console.log('🚪 Logout clicked')
     try {
+      setShowUserMenu(false) // Close menu first
       await logout()
       console.log('✅ Logout successful')
-      navigate('/login')
+      // No need to navigate - auth state change will handle redirect
     } catch (error) {
       console.error('❌ Logout error:', error)
+      alert('Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.')
     }
   }
 
