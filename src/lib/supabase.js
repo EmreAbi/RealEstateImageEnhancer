@@ -234,13 +234,22 @@ export const getUserImages = async (userId) => {
  * Create image record in database
  */
 export const createImageRecord = async (imageData) => {
+  console.log('💾 createImageRecord called:', imageData)
+
   const { data, error } = await supabase
     .from('images')
     .insert([imageData])
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ createImageRecord error:', error)
+    console.error('Error code:', error.code)
+    console.error('Error details:', error.details)
+    throw error
+  }
+
+  console.log('✅ Image record created:', data)
   return data
 }
 
