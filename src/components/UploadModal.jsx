@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useImages } from '../contexts/ImageContext'
-import { X, Upload, FolderOpen, Image as ImageIcon, Check } from 'lucide-react'
+import { X, Upload, FolderOpen, Image as ImageIcon, Check, AlertCircle } from 'lucide-react'
 
 export default function UploadModal({ onClose }) {
   const { folders, selectedFolder, uploadImages } = useImages()
@@ -8,6 +8,7 @@ export default function UploadModal({ onClose }) {
   const [dragActive, setDragActive] = useState(false)
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState(null)
   const fileInputRef = useRef(null)
 
   const handleDrag = (e) => {
@@ -52,14 +53,19 @@ export default function UploadModal({ onClose }) {
     if (files.length === 0 || !selectedFolderId) return
 
     setUploading(true)
+    setError(null)
     try {
       await uploadImages(files, selectedFolderId)
+      // Success - close modal after a brief delay
       setTimeout(() => {
         onClose()
       }, 500)
     } catch (error) {
       console.error('Upload failed:', error)
-    } finally {
+      setError(
+        error.message ||
+        'Görseller yüklenirken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.'
+      )
       setUploading(false)
     }
   }
@@ -190,6 +196,23 @@ export default function UploadModal({ onClose }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">Yükleme Hatası</p>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="p-1 hover:bg-red-100 rounded transition-colors"
+              >
+                <X className="w-4 h-4 text-red-600" />
+              </button>
             </div>
           )}
         </div>
