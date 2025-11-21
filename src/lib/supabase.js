@@ -4,7 +4,16 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+console.log('🔧 Supabase Config:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'MISSING'
+})
+
 if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing Supabase credentials!')
+  console.error('VITE_SUPABASE_URL:', supabaseUrl)
+  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '[EXISTS]' : '[MISSING]')
   throw new Error(
     'Missing Supabase environment variables. Please check your .env file.'
   )
@@ -18,6 +27,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true
   }
 })
+
+console.log('✅ Supabase client created successfully')
 
 // Helper functions for common operations
 
@@ -138,13 +149,20 @@ export const getFolders = async (userId) => {
  * Create a new folder
  */
 export const createFolder = async (userId, name, color = '#0ea5e9') => {
+  console.log('📁 createFolder called:', { userId, name, color })
+
   const { data, error } = await supabase
     .from('folders')
     .insert([{ user_id: userId, name, color }])
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Supabase createFolder error:', error)
+    throw error
+  }
+
+  console.log('✅ Folder created in DB:', data)
   return data
 }
 

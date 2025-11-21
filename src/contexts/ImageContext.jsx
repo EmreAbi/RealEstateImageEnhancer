@@ -53,13 +53,21 @@ export const ImageProvider = ({ children }) => {
   }, [user])
 
   const loadData = async () => {
+    console.log('🔄 Loading data for user:', user?.id)
     try {
       setLoading(true)
+      console.log('🟡 Fetching data from Supabase...')
       const [foldersData, imagesData, modelsData] = await Promise.all([
         getFolders(user.id),
         getUserImages(user.id),
         getAIModels()
       ])
+
+      console.log('✅ Data fetched:', {
+        folders: foldersData?.length,
+        images: imagesData?.length,
+        models: modelsData?.length
+      })
 
       setFolders(foldersData || [])
       setImages(imagesData || [])
@@ -68,23 +76,34 @@ export const ImageProvider = ({ children }) => {
       // Set default AI model
       if (modelsData && modelsData.length > 0 && !selectedAIModel) {
         setSelectedAIModel(modelsData[0].id)
+        console.log('✅ Default AI model set:', modelsData[0].display_name)
       }
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('❌ Error loading data:', error)
+      console.error('Error details:', error.message)
     } finally {
       setLoading(false)
     }
   }
 
   const addFolder = async (name, color = '#0ea5e9') => {
+    console.log('🟢 addFolder called with:', { name, color, userId: user?.id })
     try {
-      if (!user?.id) throw new Error('User not authenticated')
+      if (!user?.id) {
+        console.error('❌ User not authenticated:', user)
+        throw new Error('User not authenticated')
+      }
 
+      console.log('🟡 Creating folder in database...')
       const newFolder = await createFolderDB(user.id, name, color)
+      console.log('✅ Folder created:', newFolder)
+
       setFolders([...folders, { ...newFolder, image_count: 0 }])
+      console.log('✅ Folders state updated')
       return newFolder
     } catch (error) {
-      console.error('Error creating folder:', error)
+      console.error('❌ Error creating folder:', error)
+      console.error('Error details:', error.message, error.stack)
       throw error
     }
   }

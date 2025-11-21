@@ -38,14 +38,21 @@ export default function Sidebar({ isOpen, onClose }) {
   const [showAIModels, setShowAIModels] = useState(false)
 
   const handleCreateFolder = async () => {
+    console.log('🔵 handleCreateFolder called, name:', newFolderName)
+
     if (newFolderName.trim()) {
+      console.log('✅ Name is valid, calling addFolder...')
       try {
         await addFolder(newFolderName.trim())
+        console.log('✅ Folder added successfully!')
         setNewFolderName('')
         setShowNewFolderInput(false)
       } catch (error) {
+        console.error('❌ handleCreateFolder error:', error)
         alert('Klasör oluşturulurken hata: ' + error.message)
       }
+    } else {
+      console.warn('⚠️ Folder name is empty!')
     }
   }
 
