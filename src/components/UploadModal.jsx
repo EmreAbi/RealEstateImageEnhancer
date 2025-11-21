@@ -3,13 +3,17 @@ import { useImages } from '../contexts/ImageContext'
 import { X, Upload, FolderOpen, Image as ImageIcon, Check, AlertCircle } from 'lucide-react'
 
 export default function UploadModal({ onClose }) {
-  const { folders, selectedFolder, uploadImages } = useImages()
+  const { folders, selectedFolder, uploadImages, images } = useImages()
   const [selectedFolderId, setSelectedFolderId] = useState(selectedFolder?.id || folders[0]?.id)
   const [dragActive, setDragActive] = useState(false)
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const fileInputRef = useRef(null)
+
+  const getFolderCount = (folderId) => {
+    return images.filter(img => img.folder_id === folderId).length
+  }
 
   const handleDrag = (e) => {
     e.preventDefault()
@@ -108,7 +112,7 @@ export default function UploadModal({ onClose }) {
               >
                 {folders.map((folder) => (
                   <option key={folder.id} value={folder.id}>
-                    {folder.name} ({folder.count} görsel)
+                    {folder.name} ({getFolderCount(folder.id)} görsel)
                   </option>
                 ))}
               </select>
