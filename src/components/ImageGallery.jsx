@@ -227,6 +227,8 @@ export default function ImageGallery() {
                 <a
                   href={image.enhanced_url || image.original_url}
                   download={image.name}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
                   title="İndir"
@@ -320,6 +322,8 @@ export default function ImageGallery() {
                       <a
                         href={image.enhanced_url || image.original_url}
                         download={image.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         title="İndir"
                       >

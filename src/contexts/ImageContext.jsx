@@ -68,10 +68,15 @@ export const ImageProvider = ({ children }) => {
 
       console.log('✅ State updated with fetched data')
 
-      // Set default AI model
-      if (modelsData && modelsData.length > 0 && !selectedAIModel) {
-        setSelectedAIModel(modelsData[0].id)
-        console.log('✅ Default AI model set:', modelsData[0].display_name)
+      // Set default AI model if not already set
+      if (modelsData && modelsData.length > 0) {
+        setSelectedAIModel(prev => {
+          if (!prev) {
+            console.log('✅ Default AI model set:', modelsData[0].display_name)
+            return modelsData[0].id
+          }
+          return prev
+        })
       }
     } catch (error) {
       console.error('❌ Error loading data:', error)
@@ -79,7 +84,7 @@ export const ImageProvider = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }, [user, selectedAIModel])
+  }, [user])
 
   // Load folders and images when user changes
   useEffect(() => {

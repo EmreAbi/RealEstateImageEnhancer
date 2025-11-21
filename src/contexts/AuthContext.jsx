@@ -20,78 +20,66 @@ export const AuthProvider = ({ children }) => {
     console.log('🔐 AuthContext initializing...')
     let mounted = true
 
-    // Check for existing session
-    const initAuth = async () => {
-      try {
-        console.log('🔍 Getting session...')
-        const { data: { session }, error } = await supabase.auth.getSession()
+    // Helper to handle session updates
+    const handleSession = async (session) => {
+      if (!mounted) return
 
-        if (error) {
-          console.error('❌ Session error:', error)
-          throw error
-        }
-
-        console.log('🔍 Session check result:', session ? 'Session exists' : 'No session')
-
-        if (mounted && session?.user) {
-          console.log('✅ User found in session:', session.user.id)
-          setUser(session.user)
-          // Load user profile
-          try {
-            const userProfile = await getUserProfile(session.user.id)
-            if (mounted) {
-              setProfile(userProfile)
-              console.log('✅ Profile loaded')
-            }
-          } catch (profileError) {
-            console.error('⚠️ Profile load error:', profileError)
-            // Continue anyway, user is authenticated
+      if (session?.user) {
+        console.log('✅ User found:', session.user.id)
+        setUser(session.user)
+        // Load user profile
+        try {
+          const userProfile = await getUserProfile(session.user.id)
+          if (mounted) {
+            setProfile(userProfile)
           }
-        } else if (!session) {
-          console.log('⚠️ No user in session')
+        } catch (error) {
+          console.error('Error loading profile:', error)
         }
-      } catch (error) {
-        console.error('❌ Error initializing auth:', error)
-      } finally {
-        if (mounted) {
-          console.log('✅ Setting loading to false')
-          setLoading(false)
-          console.log('✅ Auth initialization complete')
-        }
+      } else {
+        console.log('⚠️ No user session')
+        setUser(null)
+        setProfile(null)
+      }
+      
+      if (mounted) {
+        setLoading(false)
       }
     }
 
-    initAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔔 Auth state changed:', event, session ? 'Has session' : 'No session')
-
-        if (!mounted) return
-
-        if (session?.user) {
-          console.log('✅ Setting user:', session.user.id)
-          setUser(session.user)
-          try {
-            const userProfile = await getUserProfile(session.user.id)
-            if (mounted) {
-              setProfile(userProfile)
-            }
-          } catch (error) {
-            console.error('Error loading profile:', error)
-          }
-        } else {
-          console.log('⚠️ Clearing user state')
-          setUser(null)
-          setProfile(null)
-        }
+    // 1. Get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('❌ Session error:', error)
       }
-    )
+      console.log('🔍 getSession completed', session ? 'with session' : 'no session')
+      handleSession(session)
+    }).catch(err => {
+      console.error('❌ getSession failed:', err)
+      if (mounted) setLoading(false)
+    })
+
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔔 Auth state changed:', event)
+      handleSession(session)
+    })
+
+    // 3. Safety timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted) {
+        console.warn('⚠️ Auth check timed out - forcing completion')
+        setLoading(prev => {
+          if (prev) return false
+          return prev
+        })
+      }
+    }, 5000)
 
     return () => {
       mounted = false
       subscription.unsubscribe()
+      clearTimeout(timeoutId)
     }
   }, [])
 

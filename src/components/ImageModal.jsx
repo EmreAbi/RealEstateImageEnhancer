@@ -177,6 +177,8 @@ export default function ImageModal({ image, onClose }) {
                 <a
                   href={image.enhanced_url || image.original_url}
                   download={image.name}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 btn-secondary"
                 >
                   <Download className="w-5 h-5" />
