@@ -151,19 +151,43 @@ export const getFolders = async (userId) => {
 export const createFolder = async (userId, name, color = '#0ea5e9') => {
   console.log('📁 createFolder called:', { userId, name, color })
 
-  const { data, error } = await supabase
-    .from('folders')
-    .insert([{ user_id: userId, name, color }])
-    .select()
-    .single()
+  try {
+    // Test: Check if table exists
+    console.log('🔍 Testing table access...')
+    const { data: testData, error: testError } = await supabase
+      .from('folders')
+      .select('count')
+      .limit(1)
 
-  if (error) {
-    console.error('❌ Supabase createFolder error:', error)
-    throw error
+    console.log('Test query result:', { testData, testError })
+
+    if (testError) {
+      console.error('❌ Table access failed:', testError)
+      throw new Error(`Table access error: ${testError.message}`)
+    }
+
+    console.log('✅ Table exists, attempting insert...')
+
+    const { data, error } = await supabase
+      .from('folders')
+      .insert([{ user_id: userId, name, color }])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Supabase createFolder error:', error)
+      console.error('Error code:', error.code)
+      console.error('Error details:', error.details)
+      console.error('Error hint:', error.hint)
+      throw error
+    }
+
+    console.log('✅ Folder created in DB:', data)
+    return data
+  } catch (err) {
+    console.error('❌ createFolder exception:', err)
+    throw err
   }
-
-  console.log('✅ Folder created in DB:', data)
-  return data
 }
 
 /**
