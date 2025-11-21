@@ -141,6 +141,47 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateProfilePhoto = async (file) => {
+    try {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath)
+
+      // Update profile with new avatar URL
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setProfile(data)
+      return publicUrl
+    } catch (error) {
+      console.error('Upload profile photo failed:', error)
+      throw error
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -148,9 +189,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
-    loading,
-    // Legacy support - mevcut Login component uyumluluğu için
-    user: profile || user
+    updateProfilePhoto,
+    loading
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

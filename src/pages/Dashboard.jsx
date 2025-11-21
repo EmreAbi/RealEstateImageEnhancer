@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
 import ImageGallery from '../components/ImageGallery'
 import UploadModal from '../components/UploadModal'
+import Settings from './Settings'
 import { useImages } from '../contexts/ImageContext'
 
 export default function Dashboard() {
@@ -25,7 +27,11 @@ export default function Dashboard() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto">
-          <ImageGallery />
+          <Routes>
+            <Route index element={<ImageGallery />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </main>
       </div>
 

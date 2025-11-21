@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Building2, User, Sparkles, ImagePlus, Zap, Shield, Mail, Lock } from 'lucide-react'
+import { useLanguage } from '../contexts/LanguageContext'
+import { Building2, User, Sparkles, ImagePlus, Zap, Shield, Mail, Lock, Globe } from 'lucide-react'
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false)
@@ -10,8 +11,12 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [realEstateOffice, setRealEstateOffice] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [showLangMenu, setShowLangMenu] = useState(false)
+
   const { login, register } = useAuth()
+  const { t, language, setLanguage, availableLanguages } = useLanguage()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -22,6 +27,7 @@ export default function Login() {
     if (isRegister && (!username || !realEstateOffice)) return
 
     setLoading(true)
+
     try {
       if (isRegister) {
         await register(email, password, username, realEstateOffice)
@@ -33,7 +39,7 @@ export default function Login() {
       console.error('Authentication failed:', error)
       setError(
         error.message ||
-        (isRegister ? 'Kayıt başarısız. Lütfen tekrar deneyin.' : 'Giriş başarısız. Email ve şifrenizi kontrol edin.')
+        (isRegister ? t('auth.registrationFailed') : t('auth.invalidCredentials'))
       )
     } finally {
       setLoading(false)
@@ -42,6 +48,57 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 flex">
+      {/* Language Selector - Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <div className="relative">
+          <button
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-soft hover:shadow-md transition-all"
+          >
+            <Globe className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">
+              {availableLanguages.find(l => l.code === language)?.flag}
+            </span>
+            <span className="text-sm text-gray-600">
+              {availableLanguages.find(l => l.code === language)?.name}
+            </span>
+          </button>
+
+          {showLangMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowLangMenu(false)}
+              />
+              <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-elegant z-20 min-w-[200px] overflow-hidden">
+                {availableLanguages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code)
+                      setShowLangMenu(false)
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 text-left transition-colors
+                      ${language === lang.code
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <span className="text-xl">{lang.flag}</span>
+                    <span className="text-sm font-medium">{lang.name}</span>
+                    {language === lang.code && (
+                      <div className="ml-auto w-2 h-2 bg-primary-600 rounded-full"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Left Side - Hero Section */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 p-12 flex-col justify-between relative overflow-hidden">
         {/* Background Pattern */}
@@ -68,10 +125,10 @@ export default function Login() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  AI Powered Enhancement
+                  {t('features.aiPowered')}
                 </h3>
                 <p className="text-primary-100">
-                  Görsellerinizi yapay zeka ile profesyonel kaliteye yükseltin
+                  {t('features.aiDescription')}
                 </p>
               </div>
             </div>
@@ -82,10 +139,10 @@ export default function Login() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  Lightning Fast
+                  {t('features.lightningFast')}
                 </h3>
                 <p className="text-primary-100">
-                  Saniyeler içinde görsellerinizi işleyin ve indirin
+                  {t('features.fastDescription')}
                 </p>
               </div>
             </div>
@@ -96,10 +153,10 @@ export default function Login() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  Secure & Private
+                  {t('features.securePrivate')}
                 </h3>
                 <p className="text-primary-100">
-                  Verileriniz güvenli ve gizli olarak saklanır
+                  {t('features.secureDescription')}
                 </p>
               </div>
             </div>
@@ -107,7 +164,7 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 text-primary-100 text-sm">
-          © 2024 Real Estate Image Enhancer. All rights reserved.
+          {t('footer.allRightsReserved')}
         </div>
       </div>
 
@@ -127,10 +184,10 @@ export default function Login() {
           <div className="card p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {isRegister ? 'Hesap Oluştur' : 'Hoş Geldiniz'}
+                {isRegister ? t('auth.createAccount') : t('auth.welcomeBack')}
               </h2>
               <p className="text-gray-600">
-                {isRegister ? 'Yeni hesap oluşturun' : 'Devam etmek için giriş yapın'}
+                {isRegister ? t('auth.createNewAccount') : t('auth.loginToContinue')}
               </p>
             </div>
 
@@ -144,7 +201,7 @@ export default function Login() {
               {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  {t('auth.email')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -154,7 +211,7 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ornek@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     className="input-field pl-12"
                     required
                   />
@@ -164,21 +221,30 @@ export default function Login() {
               {/* Password Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Şifre
+                  {t('auth.password')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="********"
-                    className="input-field pl-12"
+                    placeholder={t('auth.passwordPlaceholder')}
+                    className="input-field pl-12 pr-12"
                     required
                     minLength={6}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                  >
+                    <span className="text-xs text-gray-500 hover:text-gray-700">
+                      {showPassword ? 'Hide' : 'Show'}
+                    </span>
+                  </button>
                 </div>
               </div>
 
@@ -188,7 +254,7 @@ export default function Login() {
                   {/* Username Input */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kullanıcı Adı
+                      {t('auth.username')}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -198,7 +264,7 @@ export default function Login() {
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Kullanıcı adınız"
+                        placeholder={t('auth.usernamePlaceholder')}
                         className="input-field pl-12"
                         required={isRegister}
                       />
@@ -208,7 +274,7 @@ export default function Login() {
                   {/* Real Estate Office Input */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Emlak Ofisi
+                      {t('auth.realEstateOffice')}
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -218,7 +284,7 @@ export default function Login() {
                         type="text"
                         value={realEstateOffice}
                         onChange={(e) => setRealEstateOffice(e.target.value)}
-                        placeholder="Örn: Lüks Gayrimenkul A.Ş."
+                        placeholder={t('auth.realEstateOfficePlaceholder')}
                         className="input-field pl-12"
                         required={isRegister}
                       />
@@ -251,10 +317,10 @@ export default function Login() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    {isRegister ? 'Hesap Oluşturuluyor...' : 'Giriş Yapılıyor...'}
+                    {isRegister ? t('auth.creatingAccount') : t('auth.loggingIn')}
                   </span>
                 ) : (
-                  isRegister ? 'Hesap Oluştur' : 'Giriş Yap'
+                  isRegister ? t('auth.createAccountButton') : t('auth.loginButton')
                 )}
               </button>
             </form>
@@ -267,9 +333,7 @@ export default function Login() {
                 }}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
-                {isRegister
-                  ? 'Zaten hesabınız var mı? Giriş yapın'
-                  : 'Hesabınız yok mu? Kayıt olun'}
+                {isRegister ? t('auth.alreadyHaveAccount') : t('auth.noAccount')}
               </button>
             </div>
           </div>
@@ -280,19 +344,19 @@ export default function Login() {
               <div className="bg-primary-50 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <ImagePlus className="w-6 h-6 text-primary-600" />
               </div>
-              <p className="text-xs text-gray-600">Kolay Yükleme</p>
+              <p className="text-xs text-gray-600">{t('features.easyUpload')}</p>
             </div>
             <div className="text-center">
               <div className="bg-primary-50 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <Zap className="w-6 h-6 text-primary-600" />
               </div>
-              <p className="text-xs text-gray-600">Hızlı İşlem</p>
+              <p className="text-xs text-gray-600">{t('features.fastProcessing')}</p>
             </div>
             <div className="text-center">
               <div className="bg-primary-50 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <Shield className="w-6 h-6 text-primary-600" />
               </div>
-              <p className="text-xs text-gray-600">Güvenli</p>
+              <p className="text-xs text-gray-600">{t('features.secure')}</p>
             </div>
           </div>
         </div>
