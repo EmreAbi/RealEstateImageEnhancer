@@ -2,34 +2,45 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Building2, User, Sparkles, ImagePlus, Zap, Shield, Lock, Globe } from 'lucide-react'
+import { Building2, User, Sparkles, ImagePlus, Zap, Shield, Mail, Lock, Globe } from 'lucide-react'
 
 export default function Login() {
-  const [username, setUsername] = useState('')
+  const [isRegister, setIsRegister] = useState(false)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
   const [realEstateOffice, setRealEstateOffice] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [showLangMenu, setShowLangMenu] = useState(false)
 
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const { t, language, setLanguage, availableLanguages } = useLanguage()
   const navigate = useNavigate()
-  const [showLangMenu, setShowLangMenu] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!username || !password || !realEstateOffice) return
-
-    setLoading(true)
     setError('')
 
+    if (!email || !password) return
+    if (isRegister && (!username || !realEstateOffice)) return
+
+    setLoading(true)
+
     try {
-      await login(username, password, realEstateOffice)
+      if (isRegister) {
+        await register(email, password, username, realEstateOffice)
+      } else {
+        await login(email, password)
+      }
       navigate('/dashboard')
     } catch (error) {
-      console.error('Login failed:', error)
-      setError(t('auth.invalidCredentials'))
+      console.error('Authentication failed:', error)
+      setError(
+        error.message ||
+        (isRegister ? t('auth.registrationFailed') : t('auth.invalidCredentials'))
+      )
     } finally {
       setLoading(false)
     }
@@ -173,10 +184,10 @@ export default function Login() {
           <div className="card p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                {t('auth.welcomeBack')}
+                {isRegister ? t('auth.createAccount') : t('auth.welcomeBack')}
               </h2>
               <p className="text-gray-600">
-                {t('auth.loginToContinue')}
+                {isRegister ? t('auth.createNewAccount') : t('auth.loginToContinue')}
               </p>
             </div>
 
@@ -187,40 +198,20 @@ export default function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Real Estate Office Input */}
+              {/* Email Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('auth.realEstateOffice')}
+                  {t('auth.email')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Building2 className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="text"
-                    value={realEstateOffice}
-                    onChange={(e) => setRealEstateOffice(e.target.value)}
-                    placeholder={t('auth.realEstateOfficePlaceholder')}
-                    className="input-field pl-12"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Username Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('auth.username')}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={t('auth.usernamePlaceholder')}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t('auth.emailPlaceholder')}
                     className="input-field pl-12"
                     required
                   />
@@ -243,6 +234,7 @@ export default function Login() {
                     placeholder={t('auth.passwordPlaceholder')}
                     className="input-field pl-12 pr-12"
                     required
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -256,10 +248,55 @@ export default function Login() {
                 </div>
               </div>
 
+              {/* Register-only fields */}
+              {isRegister && (
+                <>
+                  {/* Username Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('auth.username')}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={t('auth.usernamePlaceholder')}
+                        className="input-field pl-12"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Real Estate Office Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('auth.realEstateOffice')}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Building2 className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={realEstateOffice}
+                        onChange={(e) => setRealEstateOffice(e.target.value)}
+                        placeholder={t('auth.realEstateOfficePlaceholder')}
+                        className="input-field pl-12"
+                        required={isRegister}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading || !username || !password || !realEstateOffice}
+                disabled={loading}
                 className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -280,16 +317,24 @@ export default function Login() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    {t('auth.loggingIn')}
+                    {isRegister ? t('auth.creatingAccount') : t('auth.loggingIn')}
                   </span>
                 ) : (
-                  t('auth.loginButton')
+                  isRegister ? t('auth.createAccountButton') : t('auth.loginButton')
                 )}
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>{t('auth.demoNote')}</p>
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setIsRegister(!isRegister)
+                  setError('')
+                }}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                {isRegister ? t('auth.alreadyHaveAccount') : t('auth.noAccount')}
+              </button>
             </div>
           </div>
 
