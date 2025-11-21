@@ -14,15 +14,21 @@ import {
 import { useNavigate } from 'react-router-dom'
 
 export default function Header({ onToggleSidebar, onUpload }) {
-  const { user, logout } = useAuth()
+  const { user, profile, logout } = useAuth()
   const { selectedImages, enhanceImages, clearSelection } = useImages()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [enhancing, setEnhancing] = useState(false)
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    console.log('🚪 Logout clicked')
+    try {
+      await logout()
+      console.log('✅ Logout successful')
+      navigate('/login')
+    } catch (error) {
+      console.error('❌ Logout error:', error)
+    }
   }
 
   const handleEnhance = async () => {
@@ -105,15 +111,15 @@ export default function Header({ onToggleSidebar, onUpload }) {
               >
                 <div className="hidden md:block text-right">
                   <p className="text-sm font-semibold text-gray-900">
-                    {user?.username}
+                    {profile?.username || user?.email?.split('@')[0]}
                   </p>
                   <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                    {user?.realEstateOffice}
+                    {profile?.real_estate_office}
                   </p>
                 </div>
                 <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-500 rounded-full flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">
-                    {user?.username?.[0]?.toUpperCase()}
+                    {(profile?.username?.[0] || user?.email?.[0])?.toUpperCase()}
                   </span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -129,13 +135,13 @@ export default function Header({ onToggleSidebar, onUpload }) {
                   <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-elegant z-20 overflow-hidden">
                     <div className="p-4 bg-gradient-to-br from-primary-50 to-primary-100 border-b border-gray-200">
                       <p className="text-sm font-semibold text-gray-900">
-                        {user?.username}
+                        {profile?.username || user?.email?.split('@')[0]}
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
-                        {user?.realEstateOffice}
+                        {profile?.real_estate_office}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {user?.email}
+                        {profile?.email || user?.email}
                       </p>
                     </div>
 
