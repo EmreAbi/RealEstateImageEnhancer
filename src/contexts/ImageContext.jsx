@@ -27,7 +27,7 @@ export const useImages = () => {
 }
 
 export const ImageProvider = ({ children }) => {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [folders, setFolders] = useState([])
   const [images, setImages] = useState([])
   const [aiModels, setAiModels] = useState([])
@@ -37,14 +37,21 @@ export const ImageProvider = ({ children }) => {
   const [viewMode, setViewMode] = useState('grid') // grid or list
   const [loading, setLoading] = useState(false)
 
-  // Load folders and images when user changes
+  // Load folders and images when user changes AND auth is no longer loading
   useEffect(() => {
-    console.log('🔄 ImageContext useEffect triggered, user:', user?.id || 'NO USER')
+    console.log('🔄 ImageContext useEffect triggered, user:', user?.id || 'NO USER', 'authLoading:', authLoading)
+
+    // Wait for auth to finish loading before making any decisions
+    if (authLoading) {
+      console.log('⏳ Waiting for auth to finish loading...')
+      return
+    }
+
     if (user?.id) {
-      console.log('✅ User exists, loading data...')
+      console.log('✅ Auth loaded and user exists, loading data...')
       loadData()
     } else {
-      console.log('⚠️ No user, resetting state...')
+      console.log('⚠️ Auth loaded but no user, resetting state...')
       // Reset state when user logs out
       setFolders([])
       setImages([])
@@ -53,10 +60,17 @@ export const ImageProvider = ({ children }) => {
       setSelectedImages([])
       setSelectedAIModel(null)
     }
-  }, [user])
+  }, [user, authLoading])
 
   const loadData = async () => {
     console.log('🔄 Loading data for user:', user?.id)
+
+    // Safety check - ensure user exists before making API calls
+    if (!user?.id) {
+      console.warn('⚠️ loadData called but user.id is missing')
+      return
+    }
+
     try {
       setLoading(true)
       console.log('🟡 Fetching data from Supabase...')
