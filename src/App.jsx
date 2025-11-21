@@ -4,7 +4,19 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 
 function App() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
+          <p className="text-gray-600">Yükleniyor...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <Routes>
