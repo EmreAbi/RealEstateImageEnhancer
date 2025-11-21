@@ -185,7 +185,7 @@ export default function ImageGallery() {
               {/* Image */}
               <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
                 <img
-                  src={image.url}
+                  src={image.enhanced_url || image.original_url}
                   alt={image.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onClick={(e) => {
@@ -203,11 +203,11 @@ export default function ImageGallery() {
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {new Date(image.uploadedAt).toLocaleDateString('tr-TR')}
+                    {new Date(image.created_at).toLocaleDateString('tr-TR')}
                   </div>
                   <div className="flex items-center gap-1">
                     <HardDrive className="w-3 h-3" />
-                    {image.size}
+                    {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
                   </div>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export default function ImageGallery() {
                   <ImageIcon className="w-5 h-5 text-gray-700" />
                 </button>
                 <a
-                  href={image.url}
+                  href={image.enhanced_url || image.original_url}
                   download={image.name}
                   onClick={(e) => e.stopPropagation()}
                   className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
@@ -289,7 +289,7 @@ export default function ImageGallery() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={image.url}
+                        src={image.enhanced_url || image.original_url}
                         alt={image.name}
                         className="w-12 h-12 rounded-lg object-cover cursor-pointer"
                         onClick={() => setImageModal(image)}
@@ -303,10 +303,10 @@ export default function ImageGallery() {
                     {getStatusBadge(image.status)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {image.size}
+                    {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(image.uploadedAt).toLocaleDateString('tr-TR')}
+                    {new Date(image.created_at).toLocaleDateString('tr-TR')}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -318,7 +318,7 @@ export default function ImageGallery() {
                         <ImageIcon className="w-4 h-4 text-gray-600" />
                       </button>
                       <a
-                        href={image.url}
+                        href={image.enhanced_url || image.original_url}
                         download={image.name}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         title="İndir"

@@ -151,19 +151,43 @@ export const getFolders = async (userId) => {
 export const createFolder = async (userId, name, color = '#0ea5e9') => {
   console.log('📁 createFolder called:', { userId, name, color })
 
-  const { data, error } = await supabase
-    .from('folders')
-    .insert([{ user_id: userId, name, color }])
-    .select()
-    .single()
+  try {
+    // Test: Check if table exists
+    console.log('🔍 Testing table access...')
+    const { data: testData, error: testError } = await supabase
+      .from('folders')
+      .select('count')
+      .limit(1)
 
-  if (error) {
-    console.error('❌ Supabase createFolder error:', error)
-    throw error
+    console.log('Test query result:', { testData, testError })
+
+    if (testError) {
+      console.error('❌ Table access failed:', testError)
+      throw new Error(`Table access error: ${testError.message}`)
+    }
+
+    console.log('✅ Table exists, attempting insert...')
+
+    const { data, error } = await supabase
+      .from('folders')
+      .insert([{ user_id: userId, name, color }])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Supabase createFolder error:', error)
+      console.error('Error code:', error.code)
+      console.error('Error details:', error.details)
+      console.error('Error hint:', error.hint)
+      throw error
+    }
+
+    console.log('✅ Folder created in DB:', data)
+    return data
+  } catch (err) {
+    console.error('❌ createFolder exception:', err)
+    throw err
   }
-
-  console.log('✅ Folder created in DB:', data)
-  return data
 }
 
 /**
@@ -196,13 +220,24 @@ export const getImagesByFolder = async (folderId) => {
  * Get all images for a user
  */
 export const getUserImages = async (userId) => {
+  console.log('🖼️  getUserImages called for userId:', userId)
+
   const { data, error } = await supabase
     .from('images')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ getUserImages error:', error)
+    console.error('Error code:', error.code)
+    console.error('Error details:', error.details)
+    throw error
+  }
+
+  console.log('✅ getUserImages returned:', data?.length, 'images')
+  console.log('📊 Raw data:', data)
+
   return data
 }
 
@@ -210,13 +245,22 @@ export const getUserImages = async (userId) => {
  * Create image record in database
  */
 export const createImageRecord = async (imageData) => {
+  console.log('💾 createImageRecord called:', imageData)
+
   const { data, error } = await supabase
     .from('images')
     .insert([imageData])
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ createImageRecord error:', error)
+    console.error('Error code:', error.code)
+    console.error('Error details:', error.details)
+    throw error
+  }
+
+  console.log('✅ Image record created:', data)
   return data
 }
 

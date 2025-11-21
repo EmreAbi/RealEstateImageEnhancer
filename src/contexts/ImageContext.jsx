@@ -123,15 +123,29 @@ export const ImageProvider = ({ children }) => {
   }
 
   const uploadImages = async (files, folderId) => {
+    console.log('📤 uploadImages called:', { filesCount: files.length, folderId, userId: user?.id })
     try {
-      if (!user?.id) throw new Error('User not authenticated')
+      if (!user?.id) {
+        console.error('❌ User not authenticated')
+        throw new Error('User not authenticated')
+      }
 
       const targetFolderId = folderId || selectedFolder?.id || folders[0]?.id
-      if (!targetFolderId) throw new Error('No folder selected')
+      console.log('📁 Target folder:', targetFolderId)
 
-      const uploadPromises = Array.from(files).map(async (file) => {
+      if (!targetFolderId) {
+        console.error('❌ No folder selected')
+        throw new Error('No folder selected')
+      }
+
+      console.log('🔄 Uploading', files.length, 'files...')
+
+      const uploadPromises = Array.from(files).map(async (file, index) => {
+        console.log(`📷 [${index + 1}/${files.length}] Uploading:`, file.name)
+
         // Upload to storage
         const { path, url } = await uploadImage(file, user.id, targetFolderId)
+        console.log(`✅ [${index + 1}] Storage upload done:`, url)
 
         // Create database record
         const imageData = {
@@ -145,19 +159,25 @@ export const ImageProvider = ({ children }) => {
           metadata: {}
         }
 
-        return await createImageRecord(imageData)
+        console.log(`💾 [${index + 1}] Creating DB record...`, imageData)
+        const dbRecord = await createImageRecord(imageData)
+        console.log(`✅ [${index + 1}] DB record created:`, dbRecord)
+
+        return dbRecord
       })
 
       const newImages = await Promise.all(uploadPromises)
-      setImages([...images, ...newImages])
+      console.log('✅ All images uploaded:', newImages.length)
 
-      // Refresh folders to update counts
-      const updatedFolders = await getFolders(user.id)
-      setFolders(updatedFolders)
+      // Refresh all data to ensure UI is up to date
+      console.log('🔄 Refreshing all data after upload...')
+      await loadData()
+      console.log('✅ Data refreshed after upload')
 
       return newImages
     } catch (error) {
-      console.error('Error uploading images:', error)
+      console.error('❌ Error uploading images:', error)
+      console.error('Error stack:', error.stack)
       throw error
     }
   }
