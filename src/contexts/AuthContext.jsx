@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '../services/api'
 
 const AuthContext = createContext(null)
 
@@ -23,30 +24,63 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
-  const login = async (username, realEstateOffice) => {
-    // Dummy login - replace with actual API call later
-    const userData = {
-      id: Date.now(),
-      username,
-      realEstateOffice,
-      email: `${username}@${realEstateOffice.toLowerCase().replace(/\s/g, '')}.com`,
-      createdAt: new Date().toISOString()
-    }
+  const login = async (username, password, realEstateOffice) => {
+    try {
+      // Call API service (currently mock, will be Supabase later)
+      const userData = await api.login(username, password, realEstateOffice)
 
-    setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
-    return userData
+      setUser(userData)
+      localStorage.setItem('user', JSON.stringify(userData))
+      return userData
+    } catch (error) {
+      console.error('Login failed:', error)
+      throw error
+    }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
+  const logout = async () => {
+    try {
+      await api.logout()
+      setUser(null)
+      localStorage.removeItem('user')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      throw error
+    }
+  }
+
+  const updateProfile = async (updates) => {
+    try {
+      const updatedUser = await api.updateProfile(user.id, updates)
+      const newUser = { ...user, ...updatedUser }
+      setUser(newUser)
+      localStorage.setItem('user', JSON.stringify(newUser))
+      return newUser
+    } catch (error) {
+      console.error('Update profile failed:', error)
+      throw error
+    }
+  }
+
+  const updateProfilePhoto = async (file) => {
+    try {
+      const photoUrl = await api.uploadProfilePhoto(user.id, file)
+      const updatedUser = { ...user, profilePhoto: photoUrl }
+      setUser(updatedUser)
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+      return photoUrl
+    } catch (error) {
+      console.error('Upload profile photo failed:', error)
+      throw error
+    }
   }
 
   const value = {
     user,
     login,
     logout,
+    updateProfile,
+    updateProfilePhoto,
     loading
   }
 
