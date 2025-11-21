@@ -27,7 +27,7 @@ export const useImages = () => {
 }
 
 export const ImageProvider = ({ children }) => {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [folders, setFolders] = useState([])
   const [images, setImages] = useState([])
   const [aiModels, setAiModels] = useState([])
@@ -36,24 +36,41 @@ export const ImageProvider = ({ children }) => {
   const [selectedAIModel, setSelectedAIModel] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // grid or list
   const [loading, setLoading] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
 
   // Load folders and images when user changes
   useEffect(() => {
-    console.log('🔄 ImageContext useEffect triggered, user:', user?.id || 'NO USER')
+    console.log('🔄 ImageContext useEffect triggered', {
+      userId: user?.id || 'NO USER',
+      authLoading,
+      hasInitialized
+    })
+
+    // Don't do anything while auth is still loading
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...')
+      return
+    }
+
     if (user?.id) {
       console.log('✅ User exists, loading data...')
       loadData()
-    } else {
-      console.log('⚠️ No user, resetting state...')
-      // Reset state when user logs out
+      setHasInitialized(true)
+    } else if (hasInitialized) {
+      // Only reset state if we had initialized before (user logged out)
+      // Don't reset during initial page load
+      console.log('⚠️ User logged out, resetting state...')
       setFolders([])
       setImages([])
       setAiModels([])
       setSelectedFolder(null)
       setSelectedImages([])
       setSelectedAIModel(null)
+      setHasInitialized(false)
+    } else {
+      console.log('⏸️ No user and not initialized yet, skipping...')
     }
-  }, [user])
+  }, [user, authLoading])
 
   const loadData = async () => {
     console.log('🔄 Loading data for user:', user?.id)
