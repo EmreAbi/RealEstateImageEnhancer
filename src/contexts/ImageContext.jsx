@@ -169,13 +169,10 @@ export const ImageProvider = ({ children }) => {
       const newImages = await Promise.all(uploadPromises)
       console.log('✅ All images uploaded:', newImages.length)
 
-      setImages([...images, ...newImages])
-
-      // Refresh folders to update counts
-      console.log('🔄 Refreshing folders...')
-      const updatedFolders = await getFolders(user.id)
-      setFolders(updatedFolders)
-      console.log('✅ Folders refreshed')
+      // Refresh all data to ensure UI is up to date
+      console.log('🔄 Refreshing all data after upload...')
+      await loadData()
+      console.log('✅ Data refreshed after upload')
 
       return newImages
     } catch (error) {

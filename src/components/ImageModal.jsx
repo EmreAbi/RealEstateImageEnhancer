@@ -55,7 +55,7 @@ export default function ImageModal({ image, onClose }) {
               {image.name}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {new Date(image.uploadedAt).toLocaleString('tr-TR')}
+              {new Date(image.created_at).toLocaleString('tr-TR')}
             </p>
           </div>
           <button
@@ -73,7 +73,7 @@ export default function ImageModal({ image, onClose }) {
             <div className="lg:col-span-2">
               <div className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
                 <img
-                  src={image.url}
+                  src={image.enhanced_url || image.original_url}
                   alt={image.name}
                   className="max-w-full max-h-full object-contain"
                 />
@@ -109,7 +109,7 @@ export default function ImageModal({ image, onClose }) {
                     <div>
                       <p className="text-xs text-gray-500">Yüklenme Tarihi</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {new Date(image.uploadedAt).toLocaleDateString('tr-TR', {
+                        {new Date(image.created_at).toLocaleDateString('tr-TR', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
@@ -122,7 +122,9 @@ export default function ImageModal({ image, onClose }) {
                     <HardDrive className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-xs text-gray-500">Dosya Boyutu</p>
-                      <p className="text-sm font-medium text-gray-900">{image.size}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
+                      </p>
                     </div>
                   </div>
 
@@ -173,7 +175,7 @@ export default function ImageModal({ image, onClose }) {
                 )}
 
                 <a
-                  href={image.url}
+                  href={image.enhanced_url || image.original_url}
                   download={image.name}
                   className="w-full flex items-center justify-center gap-2 btn-secondary"
                 >

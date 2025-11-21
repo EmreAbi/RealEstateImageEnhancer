@@ -220,13 +220,24 @@ export const getImagesByFolder = async (folderId) => {
  * Get all images for a user
  */
 export const getUserImages = async (userId) => {
+  console.log('🖼️  getUserImages called for userId:', userId)
+
   const { data, error } = await supabase
     .from('images')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ getUserImages error:', error)
+    console.error('Error code:', error.code)
+    console.error('Error details:', error.details)
+    throw error
+  }
+
+  console.log('✅ getUserImages returned:', data?.length, 'images')
+  console.log('📊 Raw data:', data)
+
   return data
 }
 
