@@ -1,4 +1,20 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './AuthContext'
+import {
+  getFolders,
+  createFolder as createFolderDB,
+  deleteFolder as deleteFolderDB,
+  getUserImages,
+  getImagesByFolder as getImagesByFolderDB,
+  createImageRecord,
+  updateImageRecord,
+  deleteImageRecord,
+  uploadImage,
+  deleteImageFromStorage,
+  getAIModels,
+  createEnhancementLog,
+  updateEnhancementLog
+} from '../lib/supabase'
 
 const ImageContext = createContext(null)
 
@@ -10,182 +26,233 @@ export const useImages = () => {
   return context
 }
 
-// Dummy data for demonstration
-const DUMMY_FOLDERS = [
-  { id: '1', name: 'Lüks Villalar', count: 24, color: '#0ea5e9' },
-  { id: '2', name: 'Modern Apartmanlar', count: 18, color: '#8b5cf6' },
-  { id: '3', name: 'Ticari Alanlar', count: 12, color: '#f59e0b' },
-  { id: '4', name: 'Ofisler', count: 9, color: '#10b981' },
-  { id: '5', name: 'Stüdyo Daireler', count: 15, color: '#ec4899' },
-]
-
-const DUMMY_IMAGES = [
-  {
-    id: '1',
-    folderId: '1',
-    name: 'villa-bahce.jpg',
-    url: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800',
-    uploadedAt: new Date('2024-11-15').toISOString(),
-    status: 'original',
-    size: '2.4 MB'
-  },
-  {
-    id: '2',
-    folderId: '1',
-    name: 'villa-dis-cephe.jpg',
-    url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
-    uploadedAt: new Date('2024-11-15').toISOString(),
-    status: 'enhanced',
-    size: '3.1 MB'
-  },
-  {
-    id: '3',
-    folderId: '2',
-    name: 'modern-salon.jpg',
-    url: 'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800',
-    uploadedAt: new Date('2024-11-16').toISOString(),
-    status: 'original',
-    size: '1.8 MB'
-  },
-  {
-    id: '4',
-    folderId: '2',
-    name: 'mutfak-tasarim.jpg',
-    url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800',
-    uploadedAt: new Date('2024-11-16').toISOString(),
-    status: 'processing',
-    size: '2.2 MB'
-  },
-  {
-    id: '5',
-    folderId: '1',
-    name: 'villa-havuz.jpg',
-    url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
-    uploadedAt: new Date('2024-11-17').toISOString(),
-    status: 'enhanced',
-    size: '2.9 MB'
-  },
-  {
-    id: '6',
-    folderId: '3',
-    name: 'ofis-binasi.jpg',
-    url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800',
-    uploadedAt: new Date('2024-11-17').toISOString(),
-    status: 'original',
-    size: '3.5 MB'
-  },
-  {
-    id: '7',
-    folderId: '2',
-    name: 'balkon-manzara.jpg',
-    url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
-    uploadedAt: new Date('2024-11-18').toISOString(),
-    status: 'original',
-    size: '2.1 MB'
-  },
-  {
-    id: '8',
-    folderId: '4',
-    name: 'toplanti-odasi.jpg',
-    url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-    uploadedAt: new Date('2024-11-18').toISOString(),
-    status: 'enhanced',
-    size: '1.9 MB'
-  }
-]
-
 export const ImageProvider = ({ children }) => {
-  const [folders, setFolders] = useState(DUMMY_FOLDERS)
-  const [images, setImages] = useState(DUMMY_IMAGES)
+  const { user } = useAuth()
+  const [folders, setFolders] = useState([])
+  const [images, setImages] = useState([])
+  const [aiModels, setAiModels] = useState([])
   const [selectedFolder, setSelectedFolder] = useState(null)
   const [selectedImages, setSelectedImages] = useState([])
+  const [selectedAIModel, setSelectedAIModel] = useState(null)
   const [viewMode, setViewMode] = useState('grid') // grid or list
+  const [loading, setLoading] = useState(false)
 
-  const addFolder = (name, color = '#0ea5e9') => {
-    const newFolder = {
-      id: Date.now().toString(),
-      name,
-      count: 0,
-      color
-    }
-    setFolders([...folders, newFolder])
-    return newFolder
-  }
-
-  const deleteFolder = (folderId) => {
-    setFolders(folders.filter(f => f.id !== folderId))
-    setImages(images.filter(img => img.folderId !== folderId))
-    if (selectedFolder?.id === folderId) {
+  // Load folders and images when user changes
+  useEffect(() => {
+    if (user?.id) {
+      loadData()
+    } else {
+      // Reset state when user logs out
+      setFolders([])
+      setImages([])
+      setAiModels([])
       setSelectedFolder(null)
+      setSelectedImages([])
+      setSelectedAIModel(null)
+    }
+  }, [user])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [foldersData, imagesData, modelsData] = await Promise.all([
+        getFolders(user.id),
+        getUserImages(user.id),
+        getAIModels()
+      ])
+
+      setFolders(foldersData || [])
+      setImages(imagesData || [])
+      setAiModels(modelsData || [])
+
+      // Set default AI model
+      if (modelsData && modelsData.length > 0 && !selectedAIModel) {
+        setSelectedAIModel(modelsData[0].id)
+      }
+    } catch (error) {
+      console.error('Error loading data:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const uploadImages = (files, folderId) => {
-    const newImages = Array.from(files).map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      folderId: folderId || selectedFolder?.id || folders[0]?.id,
-      name: file.name,
-      url: URL.createObjectURL(file),
-      uploadedAt: new Date().toISOString(),
-      status: 'original',
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-    }))
+  const addFolder = async (name, color = '#0ea5e9') => {
+    try {
+      if (!user?.id) throw new Error('User not authenticated')
 
-    setImages([...images, ...newImages])
-
-    // Update folder count
-    const targetFolderId = folderId || selectedFolder?.id || folders[0]?.id
-    setFolders(folders.map(f =>
-      f.id === targetFolderId
-        ? { ...f, count: f.count + newImages.length }
-        : f
-    ))
-
-    return newImages
+      const newFolder = await createFolderDB(user.id, name, color)
+      setFolders([...folders, { ...newFolder, image_count: 0 }])
+      return newFolder
+    } catch (error) {
+      console.error('Error creating folder:', error)
+      throw error
+    }
   }
 
-  const deleteImages = (imageIds) => {
-    const deletedImages = images.filter(img => imageIds.includes(img.id))
-
-    setImages(images.filter(img => !imageIds.includes(img.id)))
-    setSelectedImages(selectedImages.filter(id => !imageIds.includes(id)))
-
-    // Update folder counts
-    const folderCounts = {}
-    deletedImages.forEach(img => {
-      folderCounts[img.folderId] = (folderCounts[img.folderId] || 0) + 1
-    })
-
-    setFolders(folders.map(f =>
-      folderCounts[f.id]
-        ? { ...f, count: Math.max(0, f.count - folderCounts[f.id]) }
-        : f
-    ))
+  const deleteFolder = async (folderId) => {
+    try {
+      await deleteFolderDB(folderId)
+      setFolders(folders.filter(f => f.id !== folderId))
+      setImages(images.filter(img => img.folder_id !== folderId))
+      if (selectedFolder?.id === folderId) {
+        setSelectedFolder(null)
+      }
+    } catch (error) {
+      console.error('Error deleting folder:', error)
+      throw error
+    }
   }
 
-  const enhanceImages = async (imageIds) => {
-    // Simulate AI processing
-    imageIds.forEach(id => {
-      setImages(prevImages =>
-        prevImages.map(img =>
-          img.id === id ? { ...img, status: 'processing' } : img
-        )
-      )
-    })
+  const uploadImages = async (files, folderId) => {
+    try {
+      if (!user?.id) throw new Error('User not authenticated')
 
-    // Simulate processing delay
-    setTimeout(() => {
-      setImages(prevImages =>
-        prevImages.map(img =>
-          imageIds.includes(img.id) ? { ...img, status: 'enhanced' } : img
-        )
+      const targetFolderId = folderId || selectedFolder?.id || folders[0]?.id
+      if (!targetFolderId) throw new Error('No folder selected')
+
+      const uploadPromises = Array.from(files).map(async (file) => {
+        // Upload to storage
+        const { path, url } = await uploadImage(file, user.id, targetFolderId)
+
+        // Create database record
+        const imageData = {
+          user_id: user.id,
+          folder_id: targetFolderId,
+          name: file.name,
+          original_url: url,
+          file_size: file.size,
+          mime_type: file.type,
+          status: 'original',
+          metadata: {}
+        }
+
+        return await createImageRecord(imageData)
+      })
+
+      const newImages = await Promise.all(uploadPromises)
+      setImages([...images, ...newImages])
+
+      // Refresh folders to update counts
+      const updatedFolders = await getFolders(user.id)
+      setFolders(updatedFolders)
+
+      return newImages
+    } catch (error) {
+      console.error('Error uploading images:', error)
+      throw error
+    }
+  }
+
+  const deleteImages = async (imageIds) => {
+    try {
+      const deletedImages = images.filter(img => imageIds.includes(img.id))
+
+      // Delete from database and storage
+      await Promise.all(
+        deletedImages.map(async (img) => {
+          // Delete from database
+          await deleteImageRecord(img.id)
+
+          // Delete from storage (extract path from URL)
+          if (img.original_url) {
+            const pathMatch = img.original_url.match(/\/images\/(.+)$/)
+            if (pathMatch) {
+              await deleteImageFromStorage(pathMatch[1])
+            }
+          }
+
+          // Delete enhanced image if exists
+          if (img.enhanced_url) {
+            const pathMatch = img.enhanced_url.match(/\/images\/(.+)$/)
+            if (pathMatch) {
+              await deleteImageFromStorage(pathMatch[1])
+            }
+          }
+        })
       )
-    }, 3000)
+
+      setImages(images.filter(img => !imageIds.includes(img.id)))
+      setSelectedImages(selectedImages.filter(id => !imageIds.includes(id)))
+
+      // Refresh folders to update counts
+      const updatedFolders = await getFolders(user.id)
+      setFolders(updatedFolders)
+    } catch (error) {
+      console.error('Error deleting images:', error)
+      throw error
+    }
+  }
+
+  const enhanceImages = async (imageIds, modelId) => {
+    try {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      const aiModelId = modelId || selectedAIModel
+      if (!aiModelId) throw new Error('No AI model selected')
+
+      // Update images to processing status
+      const updatedImages = await Promise.all(
+        imageIds.map(async (id) => {
+          const updated = await updateImageRecord(id, { status: 'processing' })
+          return updated
+        })
+      )
+
+      setImages(prevImages =>
+        prevImages.map(img => {
+          const updated = updatedImages.find(u => u.id === img.id)
+          return updated || img
+        })
+      )
+
+      // Create enhancement logs for each image
+      const enhancementPromises = imageIds.map(async (imageId) => {
+        const log = await createEnhancementLog({
+          user_id: user.id,
+          image_id: imageId,
+          ai_model_id: aiModelId,
+          status: 'pending',
+          parameters: {}
+        })
+
+        // Here you would call your actual AI API
+        // For now, we'll simulate it
+        // TODO: Implement actual AI enhancement call
+
+        return log
+      })
+
+      await Promise.all(enhancementPromises)
+
+      // Simulate AI processing (replace with actual API call)
+      setTimeout(async () => {
+        await Promise.all(
+          imageIds.map(async (id) => {
+            await updateImageRecord(id, { status: 'enhanced' })
+          })
+        )
+
+        // Reload images
+        const updatedImages = await getUserImages(user.id)
+        setImages(updatedImages)
+      }, 3000)
+    } catch (error) {
+      console.error('Error enhancing images:', error)
+
+      // Update failed images
+      await Promise.all(
+        imageIds.map(async (id) => {
+          await updateImageRecord(id, { status: 'failed' })
+        })
+      )
+
+      throw error
+    }
   }
 
   const getImagesByFolder = (folderId) => {
     if (!folderId) return images
-    return images.filter(img => img.folderId === folderId)
+    return images.filter(img => img.folder_id === folderId)
   }
 
   const toggleImageSelection = (imageId) => {
@@ -207,10 +274,14 @@ export const ImageProvider = ({ children }) => {
   const value = {
     folders,
     images,
+    aiModels,
     selectedFolder,
     selectedImages,
+    selectedAIModel,
     viewMode,
+    loading,
     setSelectedFolder,
+    setSelectedAIModel,
     setViewMode,
     addFolder,
     deleteFolder,
@@ -220,7 +291,8 @@ export const ImageProvider = ({ children }) => {
     getImagesByFolder,
     toggleImageSelection,
     selectAllImages,
-    clearSelection
+    clearSelection,
+    refreshData: loadData
   }
 
   return <ImageContext.Provider value={value}>{children}</ImageContext.Provider>

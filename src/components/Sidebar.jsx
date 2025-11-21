@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useImages } from '../contexts/ImageContext'
+import { useAuth } from '../contexts/AuthContext'
 import {
   Folder,
   FolderPlus,
@@ -9,7 +10,9 @@ import {
   List,
   X,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  Cpu,
+  Check
 } from 'lucide-react'
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -20,33 +23,49 @@ export default function Sidebar({ isOpen, onClose }) {
     addFolder,
     deleteFolder,
     images,
+    aiModels,
+    selectedAIModel,
+    setSelectedAIModel,
     viewMode,
     setViewMode
   } = useImages()
 
+  const { profile } = useAuth()
+
   const [showNewFolderInput, setShowNewFolderInput] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [folderMenuOpen, setFolderMenuOpen] = useState(null)
+  const [showAIModels, setShowAIModels] = useState(false)
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (newFolderName.trim()) {
-      addFolder(newFolderName.trim())
-      setNewFolderName('')
-      setShowNewFolderInput(false)
+      try {
+        await addFolder(newFolderName.trim())
+        setNewFolderName('')
+        setShowNewFolderInput(false)
+      } catch (error) {
+        alert('Klasör oluşturulurken hata: ' + error.message)
+      }
     }
   }
 
-  const handleDeleteFolder = (e, folderId) => {
+  const handleDeleteFolder = async (e, folderId) => {
     e.stopPropagation()
     if (confirm('Bu klasörü ve içindeki tüm görselleri silmek istediğinize emin misiniz?')) {
-      deleteFolder(folderId)
-      setFolderMenuOpen(null)
+      try {
+        await deleteFolder(folderId)
+        setFolderMenuOpen(null)
+      } catch (error) {
+        alert('Klasör silinirken hata: ' + error.message)
+      }
     }
   }
 
   const getFolderCount = (folderId) => {
-    return images.filter(img => img.folderId === folderId).length
+    return images.filter(img => img.folder_id === folderId).length
   }
+
+  const selectedModel = aiModels.find(m => m.id === selectedAIModel)
 
   return (
     <>
@@ -119,8 +138,79 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Folders Section */}
+        {/* Content Section */}
         <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          {/* AI Model Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                AI Model
+              </h3>
+              <button
+                onClick={() => setShowAIModels(!showAIModels)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Model Seç"
+              >
+                <Cpu className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Selected AI Model */}
+            <button
+              onClick={() => setShowAIModels(!showAIModels)}
+              className="w-full p-3 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg hover:shadow-md transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {selectedModel?.display_name || 'Model Seçin'}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {selectedModel?.provider || 'Provider'}
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* AI Models Dropdown */}
+            {showAIModels && aiModels.length > 0 && (
+              <div className="mt-2 p-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+                {aiModels.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => {
+                      setSelectedAIModel(model.id)
+                      setShowAIModels(false)
+                    }}
+                    className={`
+                      w-full p-3 rounded-lg transition-all mb-1 last:mb-0
+                      ${selectedAIModel === model.id
+                        ? 'bg-purple-50 border border-purple-200'
+                        : 'hover:bg-gray-50 border border-transparent'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-2">
+                      {selectedAIModel === model.id && (
+                        <Check className="w-4 h-4 text-purple-600" />
+                      )}
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium text-gray-900">
+                          {model.display_name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {model.description || model.provider}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Folders Section */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
@@ -239,15 +329,15 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
               <span className="text-white font-semibold text-sm">
-                {localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')).username?.[0]?.toUpperCase()}
+                {profile?.username?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">
-                {localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')).username}
+                {profile?.username || 'User'}
               </p>
               <p className="text-xs text-gray-600 truncate">
-                {localStorage.getItem('user') && JSON.parse(localStorage.getItem('user')).realEstateOffice}
+                {profile?.real_estate_office || 'Real Estate Office'}
               </p>
             </div>
           </div>
