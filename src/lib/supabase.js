@@ -379,3 +379,31 @@ export const getUserEnhancementHistory = async (userId, limit = 50) => {
   if (error) throw error
   return data
 }
+
+/**
+ * Invoke the edge function that enhances an image using OpenAI
+ */
+export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverride }) => {
+  console.log('🚀 invokeImageEnhancement called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
+
+  const { data, error } = await supabase.functions.invoke('enhance-image', {
+    body: {
+      imageId,
+      aiModelId,
+      ...(promptOverride ? { promptOverride } : {})
+    }
+  })
+
+  if (error) {
+    console.error('❌ enhance-image edge function error:', error)
+    throw error
+  }
+
+  if (data?.error) {
+    console.error('❌ enhance-image function returned error payload:', data)
+    throw new Error(data.error)
+  }
+
+  console.log('✅ invokeImageEnhancement success:', data)
+  return data
+}

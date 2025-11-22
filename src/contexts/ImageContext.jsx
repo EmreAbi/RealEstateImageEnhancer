@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
+import { useSettings } from './SettingsContext'
 import {
   getFolders,
   createFolder as createFolderDB,
@@ -7,13 +8,11 @@ import {
   getUserImages,
   getImagesByFolder as getImagesByFolderDB,
   createImageRecord,
-  updateImageRecord,
   deleteImageRecord,
   uploadImage,
   deleteImageFromStorage,
   getAIModels,
-  createEnhancementLog,
-  updateEnhancementLog
+  invokeImageEnhancement
 } from '../lib/supabase'
 
 const ImageContext = createContext(null)
@@ -28,6 +27,7 @@ export const useImages = () => {
 
 export const ImageProvider = ({ children }) => {
   const { user, loading: authLoading } = useAuth()
+  const { settings } = useSettings()
   const [folders, setFolders] = useState([])
   const [images, setImages] = useState([])
   const [aiModels, setAiModels] = useState([])
@@ -71,11 +71,18 @@ export const ImageProvider = ({ children }) => {
       // Set default AI model if not already set
       if (modelsData && modelsData.length > 0) {
         setSelectedAIModel(prev => {
-          if (!prev) {
-            console.log('✅ Default AI model set:', modelsData[0].display_name)
-            return modelsData[0].id
+          if (prev) {
+            return prev
           }
-          return prev
+
+          const preferredModel = modelsData.find(model => model.model_identifier === 'gpt-image-1') || modelsData[0]
+
+          if (preferredModel) {
+            console.log('✅ Default AI model set:', preferredModel.display_name)
+            return preferredModel.id
+          }
+
+          return null
         })
       }
     } catch (error) {
@@ -260,68 +267,67 @@ export const ImageProvider = ({ children }) => {
   }
 
   const enhanceImages = async (imageIds, modelId) => {
+    const processedIds = []
+    const enhancementResults = []
+
     try {
       if (!user?.id) throw new Error('User not authenticated')
 
-      const aiModelId = modelId || selectedAIModel
+      // Use modelId parameter, or fall back to Settings preferred model, then selectedAIModel
+      let aiModelId = modelId || selectedAIModel
+      
+      // If still no model, try to find by preferredAiModel from settings
+      if (!aiModelId && settings.preferredAiModel) {
+        const preferredModel = aiModels.find(m => m.model_identifier === settings.preferredAiModel)
+        if (preferredModel) {
+          aiModelId = preferredModel.id
+        }
+      }
+      
       if (!aiModelId) throw new Error('No AI model selected')
 
-      // Update images to processing status
-      const updatedImages = await Promise.all(
-        imageIds.map(async (id) => {
-          const updated = await updateImageRecord(id, { status: 'processing' })
-          return updated
-        })
-      )
-
+      // Optimistically mark images as processing in UI
       setImages(prevImages =>
-        prevImages.map(img => {
-          const updated = updatedImages.find(u => u.id === img.id)
-          return updated || img
-        })
+        prevImages.map(img =>
+          imageIds.includes(img.id) ? { ...img, status: 'processing' } : img
+        )
       )
 
-      // Create enhancement logs for each image
-      const enhancementPromises = imageIds.map(async (imageId) => {
-        const log = await createEnhancementLog({
-          user_id: user.id,
-          image_id: imageId,
-          ai_model_id: aiModelId,
-          status: 'pending',
-          parameters: {}
-        })
+      for (const imageId of imageIds) {
+        try {
+          const result = await invokeImageEnhancement({ imageId, aiModelId })
+          enhancementResults.push(result)
+          processedIds.push(imageId)
 
-        // Here you would call your actual AI API
-        // For now, we'll simulate it
-        // TODO: Implement actual AI enhancement call
+          if (result?.image) {
+            setImages(prevImages =>
+              prevImages.map(img => (img.id === imageId ? { ...img, ...result.image } : img))
+            )
+          }
+        } catch (enhanceError) {
+          console.error('❌ Error enhancing image:', imageId, enhanceError)
+          setImages(prevImages =>
+            prevImages.map(img =>
+              img.id === imageId ? { ...img, status: 'failed' } : img
+            )
+          )
+          throw enhanceError
+        }
+      }
 
-        return log
-      })
+      // Refresh folders and images to sync counts/statuses
+      await loadData()
 
-      await Promise.all(enhancementPromises)
-
-      // Simulate AI processing (replace with actual API call)
-      setTimeout(async () => {
-        await Promise.all(
-          imageIds.map(async (id) => {
-            await updateImageRecord(id, { status: 'enhanced' })
-          })
-        )
-
-        // Reload images
-        const updatedImages = await getUserImages(user.id)
-        setImages(updatedImages)
-      }, 3000)
+      return enhancementResults
     } catch (error) {
       console.error('Error enhancing images:', error)
-
-      // Update failed images
-      await Promise.all(
-        imageIds.map(async (id) => {
-          await updateImageRecord(id, { status: 'failed' })
-        })
+      setImages(prevImages =>
+        prevImages.map(img =>
+          imageIds.includes(img.id) && !processedIds.includes(img.id)
+            ? { ...img, status: 'failed' }
+            : img
+        )
       )
-
       throw error
     }
   }

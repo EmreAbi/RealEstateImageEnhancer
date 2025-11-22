@@ -1,16 +1,21 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Camera, Building2, Mail, Phone, MapPin, Upload, X, Check, Globe } from 'lucide-react'
+import { Camera, Building2, Mail, Phone, MapPin, Upload, X, Check, Globe, Sparkles, ArrowLeft } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { useNavigate } from 'react-router-dom'
 
 export default function Settings() {
+  const navigate = useNavigate()
   const { user, updateProfile, updateProfilePhoto } = useAuth()
   const { settings, updateSettings, updateCompanyLogo, removeCompanyLogo } = useSettings()
   const { t, language, setLanguage, availableLanguages } = useLanguage()
 
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [aiModels, setAiModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState(settings.preferredAiModel || 'gpt-image-1')
 
   const [formData, setFormData] = useState({
     companyName: settings.companyName || user?.realEstateOffice || '',
@@ -21,6 +26,25 @@ export default function Settings() {
 
   const logoInputRef = useRef(null)
   const photoInputRef = useRef(null)
+
+  useEffect(() => {
+    fetchAiModels()
+  }, [])
+
+  const fetchAiModels = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .eq('is_active', true)
+        .order('provider', { ascending: true })
+
+      if (error) throw error
+      setAiModels(data || [])
+    } catch (error) {
+      console.error('Failed to fetch AI models:', error)
+    }
+  }
 
   const handleInputChange = (e) => {
     setFormData({
@@ -34,7 +58,10 @@ export default function Settings() {
     setMessage({ type: '', text: '' })
 
     try {
-      await updateSettings(formData)
+      await updateSettings({
+        ...formData,
+        preferredAiModel: selectedModel
+      })
       setMessage({ type: 'success', text: t('settings.changesSaved') })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     } catch (error) {
@@ -118,6 +145,15 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="mb-6 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg shadow-sm transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Ana Sayfaya Dön</span>
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -149,6 +185,78 @@ export default function Settings() {
         )}
 
         <div className="space-y-6">
+          {/* AI Model Selection */}
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles className="w-6 h-6 text-primary-600" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                AI İyileştirme Modeli
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Görsellerin iyileştirilmesinde kullanılacak AI modelini seçin. Her model farklı özellikler ve kalite sunmaktadır.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {aiModels.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => setSelectedModel(model.model_identifier)}
+                    className={`
+                      text-left p-5 rounded-xl border-2 transition-all
+                      ${selectedModel === model.model_identifier
+                        ? 'border-primary-500 bg-primary-50 shadow-lg'
+                        : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className={`w-5 h-5 ${
+                          selectedModel === model.model_identifier 
+                            ? 'text-primary-600' 
+                            : 'text-gray-400'
+                        }`} />
+                        <h3 className={`font-semibold ${
+                          selectedModel === model.model_identifier
+                            ? 'text-primary-900'
+                            : 'text-gray-900'
+                        }`}>
+                          {model.display_name}
+                        </h3>
+                      </div>
+                      {selectedModel === model.model_identifier && (
+                        <div className="w-3 h-3 bg-primary-600 rounded-full"></div>
+                      )}
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 mb-3">
+                      {model.description}
+                    </p>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {model.provider === 'openai' ? '🤖 OpenAI' : '🎨 FAL.AI'}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        ✓ Aktif
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {aiModels.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Sparkles className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>Aktif AI modeli bulunamadı</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Language Settings */}
           <div className="card p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">

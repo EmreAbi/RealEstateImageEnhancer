@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useImages } from '../contexts/ImageContext'
 import {
   Download,
@@ -7,6 +7,7 @@ import {
   Clock,
   Sparkles,
   CheckCircle2,
+  AlertTriangle,
   Image as ImageIcon,
   Calendar,
   HardDrive
@@ -28,6 +29,19 @@ export default function ImageGallery() {
 
   const [imageModal, setImageModal] = useState(null)
 
+  useEffect(() => {
+    if (!imageModal) return
+
+    const fresh = images.find(img => img.id === imageModal.id)
+    if (fresh && fresh !== imageModal) {
+      setImageModal(fresh)
+    }
+
+    if (!fresh) {
+      setImageModal(null)
+    }
+  }, [images, imageModal])
+
   const displayImages = selectedFolder
     ? getImagesByFolder(selectedFolder.id)
     : images
@@ -47,7 +61,14 @@ export default function ImageGallery() {
     }
   }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, image) => {
+    const modelName = image?.metadata?.enhancement?.model
+    const getModelIcon = (model) => {
+      if (model?.includes('openai') || model?.includes('gpt-image')) return '🤖'
+      if (model?.includes('fal-ai') || model?.includes('flux') || model?.includes('reve') || model?.includes('nano')) return '🎨'
+      return ''
+    }
+
     switch (status) {
       case 'original':
         return (
@@ -65,9 +86,17 @@ export default function ImageGallery() {
         )
       case 'enhanced':
         return (
-          <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+          <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full" title={modelName || 'AI İyileştirildi'}>
             <Sparkles className="w-3 h-3" />
+            {modelName && <span>{getModelIcon(modelName)}</span>}
             İyileştirildi
+          </span>
+        )
+      case 'failed':
+        return (
+          <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">
+            <AlertTriangle className="w-3 h-3" />
+            Hata
           </span>
         )
       default:
@@ -179,7 +208,7 @@ export default function ImageGallery() {
 
               {/* Status Badge */}
               <div className="absolute top-3 right-3 z-10">
-                {getStatusBadge(image.status)}
+                {getStatusBadge(image.status, image)}
               </div>
 
               {/* Image */}
@@ -302,7 +331,7 @@ export default function ImageGallery() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {getStatusBadge(image.status)}
+                    {getStatusBadge(image.status, image)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}

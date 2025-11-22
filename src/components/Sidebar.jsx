@@ -147,75 +147,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Content Section */}
         <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-          {/* AI Model Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                AI Model
-              </h3>
-              <button
-                onClick={() => setShowAIModels(!showAIModels)}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Model Seç"
-              >
-                <Cpu className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-
-            {/* Selected AI Model */}
-            <button
-              onClick={() => setShowAIModels(!showAIModels)}
-              className="w-full p-3 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200 rounded-lg hover:shadow-md transition-all"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedModel?.display_name || 'Model Seçin'}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {selectedModel?.provider || 'Provider'}
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            {/* AI Models Dropdown */}
-            {showAIModels && aiModels.length > 0 && (
-              <div className="mt-2 p-2 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {aiModels.map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => {
-                      setSelectedAIModel(model.id)
-                      setShowAIModels(false)
-                    }}
-                    className={`
-                      w-full p-3 rounded-lg transition-all mb-1 last:mb-0
-                      ${selectedAIModel === model.id
-                        ? 'bg-purple-50 border border-purple-200'
-                        : 'hover:bg-gray-50 border border-transparent'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center gap-2">
-                      {selectedAIModel === model.id && (
-                        <Check className="w-4 h-4 text-purple-600" />
-                      )}
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium text-gray-900">
-                          {model.display_name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {model.description || model.provider}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* AI Model Section - Hidden, using Reve by default */}
 
           {/* Folders Section */}
           <div className="mb-6">
@@ -286,7 +218,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   <button
                     onClick={() => setSelectedFolder(folder)}
                     className={`
-                      w-full sidebar-item
+                      w-full sidebar-item pr-10
                       ${selectedFolder?.id === folder.id ? 'sidebar-item-active' : 'sidebar-item-inactive'}
                     `}
                   >
@@ -296,35 +228,34 @@ export default function Sidebar({ isOpen, onClose }) {
                     />
                     <Folder className="w-5 h-5" />
                     <span className="flex-1 text-left truncate">{folder.name}</span>
-                    <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600 rounded-full">
+                    <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600 rounded-full mr-1">
                       {getFolderCount(folder.id)}
                     </span>
                   </button>
 
-                  {/* Folder Menu */}
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id)
-                      }}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-500" />
-                    </button>
+                  {/* Folder Menu Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id)
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-500" />
+                  </button>
 
-                    {folderMenuOpen === folder.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
-                        <button
-                          onClick={(e) => handleDeleteFolder(e, folder.id)}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Sil
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Folder Menu Dropdown */}
+                  {folderMenuOpen === folder.id && (
+                    <div className="absolute right-2 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[150px]">
+                      <button
+                        onClick={(e) => handleDeleteFolder(e, folder.id)}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Sil
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

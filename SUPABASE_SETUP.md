@@ -58,6 +58,10 @@ Bu script şunları oluşturur:
 3. SQL Editor'e yapıştırın
 4. **"Run"** butonuna tıklayın
 
+### 2.4. Güncel Migration Script'lerini Çalıştırın
+
+Klasördeki diğer migration dosyalarını (003-006) kronolojik sırayla çalıştırmayı unutmayın. Özellikle `006_add_gpt_image_model.sql` OpenAI GPT-Image model tanımını ekler ve edge fonksiyonunun varsayılan modeli olarak kullanılır.
+
 ---
 
 ## 3. Storage Buckets Oluşturma
@@ -114,14 +118,15 @@ Proje root dizininde `.env` dosyasını açın ve şu değerleri doldurun:
 # Supabase Configuration
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
-
-# Optional: AI Model API Keys (enhancement için gerekli)
-VITE_OPENAI_API_KEY=
-VITE_REPLICATE_API_KEY=
-VITE_STABILITY_API_KEY=
 ```
 
 ⚠️ **ÖNEMLİ**: `.env` dosyası `.gitignore`'da olduğundan production'a push edilmeyecektir.
+
+ℹ️ **OpenAI Anahtarı**: API anahtarınızı `.env` dosyasına eklemeyin. Supabase CLI kullanarak edge fonksiyonuna secret olarak tanımlayın:
+
+```bash
+supabase secrets set OPENAI_API_KEY=your-openai-api-key
+```
 
 ### 4.3. Cloudflare Environment Variables (Production)
 
@@ -168,6 +173,44 @@ Email şablonlarını Türkçeleştirmek isterseniz:
 
 ---
 
+## 7. Edge Function: `enhance-image`
+
+Gerçek zamanlı görüntü iyileştirme, Supabase edge fonksiyonu üzerinden OpenAI GPT-Image-1 modeline delegedir.
+
+### 7.1. Secret Tanımlama
+
+```bash
+supabase secrets set OPENAI_API_KEY=your-openai-api-key
+```
+
+> ⚠️ OpenAI anahtarınızı yalnızca Supabase secret olarak saklayın. Frontend `.env` dosyasına eklemeyin.
+
+### 7.2. Lokal Geliştirme
+
+```bash
+supabase functions serve enhance-image --env-file supabase/.env.local
+```
+
+`supabase/.env.local` dosyasında `OPENAI_API_KEY` anahtarınızı tanımlayabilirsiniz. Bu dosya `.gitignore` içinde kalmalıdır.
+
+### 7.3. Deploy
+
+```bash
+supabase functions deploy enhance-image
+```
+
+Deploy sonrası Supabase Dashboard > Edge Functions sekmesinden logları izleyebilirsiniz.
+
+### 7.4. Sağlık Kontrolü
+
+1. Uygulamada bir görsel yükleyin
+2. Görseli seçip "İyileştir" butonuna tıklayın
+3. `images` tablosunda `status` değerinin `processing` → `enhanced` olduğunu doğrulayın
+4. Storage `images` bucket'ında `enhanced-*.png` dosyasının oluştuğunu kontrol edin
+5. `enhancement_logs` tablosunda ilgili kaydın `completed` statüsüne geldiğini doğrulayın
+
+---
+
 ## 6. Test ve Doğrulama
 
 ### 6.1. Lokal Test
@@ -180,12 +223,17 @@ Email şablonlarını Türkçeleştirmek isterseniz:
 2. Browser'da `http://localhost:5173` adresine gidin
 
 3. **Kayıt ol** butonuna tıklayın ve test kullanıcısı oluşturun:
-   - Email: test@example.com
-   - Password: test123456
-   - Username: Test User
-   - Emlak Ofisi: Test Realty
-
 4. Email onay linkine tıklayın (Supabase Development'ta email gönderilmez, onay linkini Authentication > Users'dan alabilirsiniz)
+
+   ```
+
+   ⚠️ **OpenAI API anahtarınızı .env dosyasına eklemeyin.**
+
+   Supabase Edge Function'ı için anahtarı secure secret olarak eklemek üzere Supabase CLI ile şu komutu çalıştırın:
+
+   ```bash
+   supabase secrets set OPENAI_API_KEY=your-openai-api-key
+   ```
 
 5. Giriş yapın ve dashboard'u test edin:
    - ✅ Klasör oluşturma
@@ -259,7 +307,7 @@ Supabase entegrasyonu başarıyla tamamlandı! Artık:
 
 ## 🚀 Sonraki Adımlar
 
-1. **AI API Entegrasyonu**: `src/contexts/ImageContext.jsx` dosyasındaki `enhanceImages` fonksiyonuna gerçek AI API çağrıları ekleyin
+1. **OpenAI Kullanımını İzleme**: Supabase edge function loglarını ve OpenAI dashboard'unu düzenli kontrol edin
 2. **Email Templates**: Supabase email template'lerini özelleştirin
 3. **Analytics**: Kullanım istatistikleri için analitik ekleyin
 4. **Monitoring**: Hata takibi için Sentry gibi araçlar entegre edin

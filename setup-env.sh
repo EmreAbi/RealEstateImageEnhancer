@@ -21,13 +21,13 @@ cat > .env << EOF
 VITE_SUPABASE_URL=$SUPABASE_URL
 VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
-# Optional: AI Model API Keys
-VITE_OPENAI_API_KEY=
-VITE_REPLICATE_API_KEY=
-VITE_STABILITY_API_KEY=
 EOF
 
 echo ""
 echo "✅ .env dosyası başarıyla oluşturuldu!"
 echo "🔄 Şimdi development server'ı yeniden başlatın:"
 echo "   npm run dev"
+echo ""
+echo "ℹ️ OpenAI anahtarınızı .env dosyasına eklemeyin."
+echo "   Supabase edge fonksiyonu için şu komutla secret olarak ekleyin:"
+echo "   supabase secrets set OPENAI_API_KEY=your-openai-key"

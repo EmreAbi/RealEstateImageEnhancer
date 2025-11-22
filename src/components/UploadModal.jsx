@@ -4,12 +4,18 @@ import { X, Upload, FolderOpen, Image as ImageIcon, Check, AlertCircle } from 'l
 
 export default function UploadModal({ onClose }) {
   const { folders, selectedFolder, uploadImages, images } = useImages()
-  const [selectedFolderId, setSelectedFolderId] = useState(selectedFolder?.id || folders[0]?.id)
+  const [selectedFolderId, setSelectedFolderId] = useState(
+    selectedFolder?.id || (folders.length > 0 ? folders[0].id : null)
+  )
   const [dragActive, setDragActive] = useState(false)
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const fileInputRef = useRef(null)
+
+  console.log('📂 Upload Modal - Selected Folder ID:', selectedFolderId)
+  console.log('📂 Upload Modal - Available Folders:', folders)
+  console.log('📄 Upload Modal - Files:', files)
 
   const getFolderCount = (folderId) => {
     return images.filter(img => img.folder_id === folderId).length
@@ -103,20 +109,27 @@ export default function UploadModal({ onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Klasör Seçin
             </label>
-            <div className="relative">
-              <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={selectedFolderId}
-                onChange={(e) => setSelectedFolderId(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
-              >
-                {folders.map((folder) => (
-                  <option key={folder.id} value={folder.id}>
-                    {folder.name} ({getFolderCount(folder.id)} görsel)
-                  </option>
-                ))}
-              </select>
-            </div>
+            {folders.length === 0 ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+                <AlertCircle className="w-5 h-5 inline mr-2" />
+                Henüz klasör oluşturmadınız. Lütfen önce bir klasör oluşturun.
+              </div>
+            ) : (
+              <div className="relative">
+                <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  value={selectedFolderId || ''}
+                  onChange={(e) => setSelectedFolderId(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+                >
+                  {folders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                      {folder.name} ({getFolderCount(folder.id)} görsel)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Drag and Drop Area */}
@@ -232,8 +245,9 @@ export default function UploadModal({ onClose }) {
           </button>
           <button
             onClick={handleUpload}
-            disabled={files.length === 0 || !selectedFolderId || uploading}
+            disabled={folders.length === 0 || files.length === 0 || !selectedFolderId || uploading}
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            title={folders.length === 0 ? 'Lütfen önce bir klasör oluşturun' : ''}
           >
             {uploading ? (
               <>

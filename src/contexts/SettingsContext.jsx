@@ -22,6 +22,7 @@ export const SettingsProvider = ({ children }) => {
       email: '',
       phone: '',
       address: '',
+      preferredAiModel: 'gpt-image-1', // Default AI model
     }
   })
 

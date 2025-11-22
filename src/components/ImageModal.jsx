@@ -1,11 +1,87 @@
-import { X, Download, Sparkles, Calendar, HardDrive, Maximize2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
+import { useSettings } from '../contexts/SettingsContext'
+import { supabase } from '../lib/supabase'
 
 export default function ImageModal({ image, onClose }) {
   const { enhanceImages } = useImages()
+  const { settings } = useSettings()
+  const [sliderPosition, setSliderPosition] = useState(50)
+  const [isDragging, setIsDragging] = useState(false)
+  const [aiModels, setAiModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState(null)
+  const [showModelSelect, setShowModelSelect] = useState(false)
+
+  useEffect(() => {
+    fetchAiModels()
+  }, [])
+
+  useEffect(() => {
+    // Set default model from settings
+    if (aiModels.length > 0 && !selectedModel) {
+      const preferred = aiModels.find(m => m.model_identifier === settings.preferredAiModel)
+      setSelectedModel(preferred || aiModels[0])
+    }
+  }, [aiModels, settings.preferredAiModel])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showModelSelect && !e.target.closest('.model-selector-dropdown')) {
+        setShowModelSelect(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showModelSelect])
+
+  const fetchAiModels = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .eq('is_active', true)
+        .order('provider', { ascending: true })
+
+      if (error) throw error
+      setAiModels(data || [])
+    } catch (error) {
+      console.error('Failed to fetch AI models:', error)
+    }
+  }
 
   const handleEnhance = async () => {
-    await enhanceImages([image.id])
+    if (selectedModel) {
+      await enhanceImages([image.id], selectedModel.id)
+    }
+  }
+
+  const handleMouseDown = () => {
+    setIsDragging(true)
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return
+    
+    const container = e.currentTarget
+    const rect = container.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100))
+    setSliderPosition(percentage)
+  }
+
+  const handleTouchMove = (e) => {
+    const container = e.currentTarget
+    const rect = container.getBoundingClientRect()
+    const x = e.touches[0].clientX - rect.left
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100))
+    setSliderPosition(percentage)
   }
 
   const getStatusInfo = (status) => {
@@ -27,6 +103,12 @@ export default function ImageModal({ image, onClose }) {
           text: 'İyileştirildi',
           color: 'text-green-700',
           bgColor: 'bg-green-100'
+        }
+      case 'failed':
+        return {
+          text: 'Hata',
+          color: 'text-red-700',
+          bgColor: 'bg-red-100'
         }
       default:
         return {
@@ -71,13 +153,70 @@ export default function ImageModal({ image, onClose }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Image Preview */}
             <div className="lg:col-span-2">
-              <div className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
-                <img
-                  src={image.enhanced_url || image.original_url}
-                  alt={image.name}
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
+              {image.status === 'enhanced' && image.enhanced_url ? (
+                /* Before/After Slider for Enhanced Images */
+                <div 
+                  className="relative bg-gray-100 rounded-xl overflow-hidden aspect-video select-none cursor-ew-resize"
+                  onMouseDown={handleMouseDown}
+                  onMouseUp={handleMouseUp}
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleMouseDown}
+                  onTouchEnd={handleMouseUp}
+                  onTouchMove={handleTouchMove}
+                >
+                  {/* Enhanced Image (Background) */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img
+                      src={image.enhanced_url}
+                      alt={`${image.name} - İyileştirilmiş`}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Original Image (Clipped overlay) */}
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+                  >
+                    <img
+                      src={image.original_url}
+                      alt={`${image.name} - Orijinal`}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Slider Line */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-1 bg-white shadow-lg cursor-ew-resize"
+                    style={{ left: `${sliderPosition}%` }}
+                  >
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center">
+                      <div className="flex gap-1">
+                        <div className="w-0.5 h-4 bg-gray-400"></div>
+                        <div className="w-0.5 h-4 bg-gray-400"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Labels */}
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-black bg-opacity-70 text-white text-sm font-medium rounded-lg pointer-events-none">
+                    Orijinal
+                  </div>
+                  <div className="absolute top-4 right-4 px-3 py-1.5 bg-black bg-opacity-70 text-white text-sm font-medium rounded-lg pointer-events-none">
+                    İyileştirilmiş
+                  </div>
+                </div>
+              ) : (
+                /* Regular Image Display */
+                <div className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
+                  <img
+                    src={image.enhanced_url || image.original_url}
+                    alt={image.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Image Details */}
@@ -93,6 +232,9 @@ export default function ImageModal({ image, onClose }) {
                   )}
                   {image.status === 'enhanced' && (
                     <Sparkles className="w-4 h-4" />
+                  )}
+                  {image.status === 'failed' && (
+                    <AlertTriangle className="w-4 h-4" />
                   )}
                   {statusInfo.text}
                 </span>
@@ -137,19 +279,118 @@ export default function ImageModal({ image, onClose }) {
                       </p>
                     </div>
                   </div>
+
+                  {/* AI Model Info - Show only if enhanced */}
+                  {image.status === 'enhanced' && image.metadata?.enhancement?.model && (
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-500">İyileştirme Modeli</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {image.metadata.enhancement.model.includes('openai') || image.metadata.enhancement.model.includes('gpt-image') 
+                            ? '🤖 OpenAI GPT-Image-1' 
+                            : image.metadata.enhancement.model.includes('flux-pro')
+                            ? '🎨 FAL.AI Flux Pro'
+                            : image.metadata.enhancement.model.includes('reve')
+                            ? '🎨 FAL.AI Reve Remix'
+                            : image.metadata.enhancement.model.includes('nano')
+                            ? '🎨 FAL.AI Nano Banana Pro'
+                            : image.metadata.enhancement.model
+                          }
+                        </p>
+                        {image.metadata.enhancement.updated_at && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(image.metadata.enhancement.updated_at).toLocaleString('tr-TR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Actions */}
               <div className="space-y-3 pt-4 border-t border-gray-200">
-                {image.status === 'original' && (
-                  <button
-                    onClick={handleEnhance}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    AI ile İyileştir
-                  </button>
+                {(image.status === 'original' || image.status === 'enhanced') && (
+                  <>
+                    {/* AI Model Selector - Dropdown */}
+                    {aiModels.length > 1 && (
+                      <div className="space-y-2 model-selector-dropdown">
+                        <label className="text-xs font-medium text-gray-700">AI Modeli Seçin</label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowModelSelect(!showModelSelect)}
+                            className="w-full p-3 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-lg transition-all text-left flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary-600" />
+                              <div>
+                                <div className="font-semibold text-gray-900 text-sm">
+                                  {selectedModel?.display_name || 'Model Seçin'}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {selectedModel?.provider === 'openai' ? '🤖 OpenAI' : selectedModel?.provider === 'fal-ai' ? '🎨 FAL.AI' : ''}
+                                </div>
+                              </div>
+                            </div>
+                            <svg className={`w-5 h-5 text-gray-400 transition-transform ${
+                              showModelSelect ? 'rotate-180' : ''
+                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Dropdown Menu */}
+                          {showModelSelect && (
+                            <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {aiModels.map((model) => (
+                                <button
+                                  key={model.id}
+                                  onClick={() => {
+                                    setSelectedModel(model)
+                                    setShowModelSelect(false)
+                                  }}
+                                  className={`w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                    selectedModel?.id === model.id ? 'bg-primary-50' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className={`w-4 h-4 ${
+                                        selectedModel?.id === model.id ? 'text-primary-600' : 'text-gray-400'
+                                      }`} />
+                                      <div>
+                                        <div className={`font-semibold text-sm ${
+                                          selectedModel?.id === model.id ? 'text-primary-900' : 'text-gray-900'
+                                        }`}>
+                                          {model.display_name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {model.provider === 'openai' ? '🤖 OpenAI' : '🎨 FAL.AI'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {selectedModel?.id === model.id && (
+                                      <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={handleEnhance}
+                      disabled={!selectedModel}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      {image.status === 'enhanced' ? 'Tekrar İyileştir' : 'İyileştir'}
+                    </button>
+                  </>
                 )}
 
                 {image.status === 'processing' && (
@@ -171,6 +412,98 @@ export default function ImageModal({ image, onClose }) {
                     <p className="text-sm text-green-600">
                       Bu görsel başarıyla AI ile iyileştirildi.
                     </p>
+                  </div>
+                )}
+
+                {image.status === 'failed' && (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-red-700 mb-2">
+                        <AlertTriangle className="w-5 h-5" />
+                        <span className="font-semibold">İşlem başarısız</span>
+                      </div>
+                      <p className="text-sm text-red-600">
+                        İyileştirme işlemi başarısız oldu. Farklı bir model deneyebilir veya tekrar deneyebilirsiniz.
+                      </p>
+                    </div>
+
+                    {/* AI Model Selector - Dropdown for retry */}
+                    {aiModels.length > 1 && (
+                      <div className="space-y-2 model-selector-dropdown">
+                        <label className="text-xs font-medium text-gray-700">Farklı Model Dene</label>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowModelSelect(!showModelSelect)}
+                            className="w-full p-3 bg-white border-2 border-gray-200 hover:border-primary-300 rounded-lg transition-all text-left flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary-600" />
+                              <div>
+                                <div className="font-semibold text-gray-900 text-sm">
+                                  {selectedModel?.display_name || 'Model Seçin'}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {selectedModel?.provider === 'openai' ? '🤖 OpenAI' : selectedModel?.provider === 'fal-ai' ? '🎨 FAL.AI' : ''}
+                                </div>
+                              </div>
+                            </div>
+                            <svg className={`w-5 h-5 text-gray-400 transition-transform ${
+                              showModelSelect ? 'rotate-180' : ''
+                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {/* Dropdown Menu */}
+                          {showModelSelect && (
+                            <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {aiModels.map((model) => (
+                                <button
+                                  key={model.id}
+                                  onClick={() => {
+                                    setSelectedModel(model)
+                                    setShowModelSelect(false)
+                                  }}
+                                  className={`w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
+                                    selectedModel?.id === model.id ? 'bg-primary-50' : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Sparkles className={`w-4 h-4 ${
+                                        selectedModel?.id === model.id ? 'text-primary-600' : 'text-gray-400'
+                                      }`} />
+                                      <div>
+                                        <div className={`font-semibold text-sm ${
+                                          selectedModel?.id === model.id ? 'text-primary-900' : 'text-gray-900'
+                                        }`}>
+                                          {model.display_name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {model.provider === 'openai' ? '🤖 OpenAI' : '🎨 FAL.AI'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {selectedModel?.id === model.id && (
+                                      <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleEnhance}
+                      disabled={!selectedModel}
+                      className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                      {selectedModel ? `${selectedModel.display_name} ile Tekrar Dene` : 'Tekrar Dene'}
+                    </button>
                   </div>
                 )}
 

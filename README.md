@@ -33,10 +33,10 @@ Emlak ofisleri için AI destekli profesyonel görsel iyileştirme platformu. Gö
 - **Görsel Önizleme**: Detaylı görsel inceleme modalı
 
 ### 🤖 AI Görsel İyileştirme
-- Yapay zeka destekli görsel iyileştirme (Mock)
-- İşlem durumu takibi (Orijinal, İşleniyor, İyileştirildi)
-- Toplu iyileştirme desteği
-- Gerçek zamanlı durum güncellemeleri
+- Supabase Edge Function üzerinden OpenAI GPT-Image-1 ile gerçek zamanlı iyileştirme
+- İşlem durumu takibi (Orijinal, İşleniyor, İyileştirildi, Hata)
+- Toplu iyileştirme desteği ve işlem logları
+- İç mekân fotoğrafları için ışık ve renk dengelemesine odaklı özel prompt
 
 ### 📊 Yönetim Paneli
 - Tüm görsellere tek yerden erişim
@@ -155,20 +155,21 @@ colors: {
 
 ## 🔜 Planlanan Özellikler
 
-- [ ] Supabase entegrasyonu
-- [ ] Gerçek AI görsel iyileştirme API'si
+- [x] Supabase entegrasyonu
+- [x] Gerçek AI görsel iyileştirme API'si
 - [ ] Kullanıcı rolleri ve yetkilendirme
 - [ ] Görsel düzenleme araçları
 - [ ] Toplu indirme
 - [ ] Görsel paylaşma
 - [ ] Analytics ve raporlama
 - [ ] E-posta bildirimleri
+- [ ] İşlem kuyruğu / retry mekanizması
 
 ## 📝 Notlar
 
-- Bu versiyon **dummy data** ile çalışmaktadır
-- Supabase entegrasyonu için `ImageContext.jsx` ve `AuthContext.jsx` dosyalarını güncelleyin
-- AI iyileştirme şu anda mock bir işlemdir, gerçek API entegrasyonu yapılmalıdır
+- Supabase ve OpenAI yapılandırmaları olmadan uygulama tam kapasite çalışmaz
+- OpenAI API anahtarınızı sadece Supabase edge function secret olarak saklayın
+- `enhance-image` edge fonksiyonu GPT-Image-1 modelini kullanır ve sadece ışık/renk iyileştirmeleri uygular
 
 ## 🤝 Katkıda Bulunma
 
