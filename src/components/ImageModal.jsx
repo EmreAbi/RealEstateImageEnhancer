@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2 } from 'lucide-react'
+import { X, Download, Sparkles, Droplet, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2 } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 import ShareModal from './ShareModal'
+import ImageWatermarkPanel from './ImageWatermarkPanel'
 
 export default function ImageModal({ image, onClose }) {
   const { t } = useLanguage()
@@ -16,6 +17,7 @@ export default function ImageModal({ image, onClose }) {
   const [selectedModel, setSelectedModel] = useState(null)
   const [showModelSelect, setShowModelSelect] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showWatermarkPanel, setShowWatermarkPanel] = useState(false)
 
   useEffect(() => {
     fetchAiModels()
@@ -394,6 +396,25 @@ export default function ImageModal({ image, onClose }) {
                       <Sparkles className="w-5 h-5" />
                       {image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance')}
                     </button>
+
+                    {/* Watermark Button */}
+                    <button
+                      onClick={() => setShowWatermarkPanel(!showWatermarkPanel)}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium"
+                    >
+                      <Droplet className="w-5 h-5" />
+                      {t('watermark.addWatermark')}
+                    </button>
+
+                    {/* Watermark Panel */}
+                    {showWatermarkPanel && (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <ImageWatermarkPanel
+                          image={image}
+                          onClose={() => setShowWatermarkPanel(false)}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
 

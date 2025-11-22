@@ -7,6 +7,7 @@ import {
   Check,
   Clock,
   Sparkles,
+  Droplet,
   CheckCircle2,
   AlertTriangle,
   Image as ImageIcon,
@@ -17,6 +18,7 @@ import {
   Archive
 } from 'lucide-react'
 import ImageModal from './ImageModal'
+import ImageWatermarkPanel from './ImageWatermarkPanel'
 import DashboardStats from './DashboardStats'
 import JSZip from 'jszip'
 
@@ -35,6 +37,7 @@ export default function ImageGallery({ searchQuery = '' }) {
   } = useImages()
 
   const [imageModal, setImageModal] = useState(null)
+  const [watermarkImageModal, setWatermarkImageModal] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     status: 'all', // all, original, processing, enhanced, failed
@@ -484,9 +487,19 @@ export default function ImageGallery({ searchQuery = '' }) {
                     setImageModal(image)
                   }}
                   className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Görüntüle"
+                  title={t('images.view')}
                 >
                   <ImageIcon className="w-5 h-5 text-gray-700" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setWatermarkImageModal(image)
+                  }}
+                  className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
+                  title={t('watermark.addWatermark')}
+                >
+                  <Droplet className="w-5 h-5 text-blue-600" />
                 </button>
                 <a
                   href={image.enhanced_url || image.original_url}
@@ -495,7 +508,7 @@ export default function ImageGallery({ searchQuery = '' }) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
-                  title="İndir"
+                  title={t('common.download')}
                 >
                   <Download className="w-5 h-5 text-gray-700" />
                 </a>
@@ -599,6 +612,18 @@ export default function ImageGallery({ searchQuery = '' }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Watermark Modal */}
+      {watermarkImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <ImageWatermarkPanel
+              image={watermarkImageModal}
+              onClose={() => setWatermarkImageModal(null)}
+            />
+          </div>
         </div>
       )}
 
