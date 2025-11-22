@@ -499,12 +499,18 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end gap-3">
+        </div>
+
+        {/* Sticky Save Button Footer */}
+        <div className="sticky bottom-0 mt-8 -mx-6 -mb-6 px-6 py-4 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {t('settings.saveChangesMessage')}
+            </p>
             <button
               onClick={handleSaveSettings}
               disabled={loading}
-              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -527,7 +533,10 @@ export default function Settings() {
                   {t('settings.savingChanges')}
                 </span>
               ) : (
-                t('settings.saveChanges')
+                <span className="flex items-center gap-2">
+                  <Check className="w-5 h-5" />
+                  {t('settings.saveChanges')}
+                </span>
               )}
             </button>
           </div>
