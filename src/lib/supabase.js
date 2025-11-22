@@ -614,3 +614,36 @@ export const getCreditHistory = async (userId, limit = 100) => {
   if (error) throw error
   return data
 }
+
+/**
+ * Watermark Functions
+ */
+
+/**
+ * Add watermark to an image
+ */
+export const addWatermark = async ({ imageId, position = 'bottom-right', opacity = 0.3, logoUrl }) => {
+  console.log('🎨 addWatermark called:', { imageId, position, opacity, logoUrl })
+
+  const { data, error } = await supabase.functions.invoke('add-watermark', {
+    body: {
+      imageId,
+      position,
+      opacity,
+      logoUrl
+    }
+  })
+
+  if (error) {
+    console.error('❌ add-watermark edge function error:', error)
+    throw error
+  }
+
+  if (data?.error) {
+    console.error('❌ add-watermark function returned error payload:', data)
+    throw new Error(data.error)
+  }
+
+  console.log('✅ addWatermark success:', data)
+  return data
+}

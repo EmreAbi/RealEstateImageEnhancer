@@ -298,6 +298,23 @@ export const translations = {
       allDone: 'All Done!',
       processingComplete: 'Processing complete',
     },
+
+    // Watermark
+    watermark: {
+      addWatermark: 'Add Company Watermark',
+      noLogo: 'Upload logo in Settings first',
+      position: 'Position',
+      bottomRight: 'Bottom Right',
+      bottomLeft: 'Bottom Left',
+      topRight: 'Top Right',
+      topLeft: 'Top Left',
+      opacity: 'Opacity',
+      subtle: 'Subtle',
+      bold: 'Bold',
+      logoPreview: 'Company Logo',
+      willBeApplied: 'Will be applied to all images',
+      addingWatermark: 'Adding watermark...',
+    },
   },
 
   tr: {
@@ -598,6 +615,23 @@ export const translations = {
       of: 'toplam',
       allDone: 'Hepsi Bitti!',
       processingComplete: 'İşleme tamamlandı',
+    },
+
+    // Watermark
+    watermark: {
+      addWatermark: 'Firma Filigranı Ekle',
+      noLogo: 'Önce Ayarlar\'dan logo yükleyin',
+      position: 'Konum',
+      bottomRight: 'Sağ Alt',
+      bottomLeft: 'Sol Alt',
+      topRight: 'Sağ Üst',
+      topLeft: 'Sol Üst',
+      opacity: 'Opaklık',
+      subtle: 'İnce',
+      bold: 'Belirgin',
+      logoPreview: 'Firma Logosu',
+      willBeApplied: 'Tüm görsellere uygulanacak',
+      addingWatermark: 'Filigran ekleniyor...',
     },
   },
 
@@ -900,6 +934,23 @@ export const translations = {
       allDone: 'Alles erledigt!',
       processingComplete: 'Verarbeitung abgeschlossen',
     },
+
+    // Watermark
+    watermark: {
+      addWatermark: 'Firmenwasserzeichen hinzufügen',
+      noLogo: 'Laden Sie zuerst ein Logo in den Einstellungen hoch',
+      position: 'Position',
+      bottomRight: 'Unten Rechts',
+      bottomLeft: 'Unten Links',
+      topRight: 'Oben Rechts',
+      topLeft: 'Oben Links',
+      opacity: 'Deckkraft',
+      subtle: 'Subtil',
+      bold: 'Fett',
+      logoPreview: 'Firmenlogo',
+      willBeApplied: 'Wird auf alle Bilder angewendet',
+      addingWatermark: 'Wasserzeichen wird hinzugefügt...',
+    },
   },
 
   fr: {
@@ -1200,6 +1251,23 @@ export const translations = {
       of: 'sur',
       allDone: 'Tout est fait!',
       processingComplete: 'Traitement terminé',
+    },
+
+    // Watermark
+    watermark: {
+      addWatermark: 'Ajouter un filigrane d\'entreprise',
+      noLogo: 'Téléchargez d\'abord un logo dans les Paramètres',
+      position: 'Position',
+      bottomRight: 'En bas à droite',
+      bottomLeft: 'En bas à gauche',
+      topRight: 'En haut à droite',
+      topLeft: 'En haut à gauche',
+      opacity: 'Opacité',
+      subtle: 'Subtil',
+      bold: 'Gras',
+      logoPreview: 'Logo de l\'entreprise',
+      willBeApplied: 'Sera appliqué à toutes les images',
+      addingWatermark: 'Ajout du filigrane...',
     },
   },
 }
