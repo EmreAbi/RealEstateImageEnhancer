@@ -226,22 +226,8 @@ export const getUserImages = async (userId, retries = 3) => {
     console.log(`🔄 Attempt ${attempt}/${retries}...`)
 
     try {
-      // Check if we have a valid session first
-      console.log('🔐 Checking current session...')
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError)
-        throw new Error('No valid session')
-      }
-
-      if (!session) {
-        console.warn('⚠️ No active session found')
-        throw new Error('No active session')
-      }
-
-      console.log('✅ Session valid, token exists:', !!session.access_token)
-
+      // Session is already validated in AuthContext - no need to check again
+      // The Supabase client will automatically use the persisted session
       let timeoutId
       let didTimeout = false
 
