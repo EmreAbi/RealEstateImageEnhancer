@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
           return prev
         })
       }
-    }, 5000)
+    }, 10000) // Increased from 5s to 10s for slower connections
 
     return () => {
       mounted = false
