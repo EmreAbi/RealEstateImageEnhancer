@@ -311,6 +311,7 @@ export const translations = {
       startDecoration: 'Start Decoration',
       decorating: 'Decorating room...',
       decorated: 'Room Decorated',
+      pleaseWait: 'This may take a few moments. Please wait...',
     },
 
     watermark: {
@@ -654,6 +655,7 @@ export const translations = {
       startDecoration: 'Döşemeye Başla',
       decorating: 'Oda döşeniyor...',
       decorated: 'Oda Döşendi',
+      pleaseWait: 'Bu birkaç dakika sürebilir. Lütfen bekleyin...',
     },
 
     watermark: {

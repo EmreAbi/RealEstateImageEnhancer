@@ -41,6 +41,7 @@ export default function ImageGallery({ searchQuery = '' }) {
   const [imageModal, setImageModal] = useState(null)
   const [watermarkImageModal, setWatermarkImageModal] = useState(null)
   const [decorateImageModal, setDecorateImageModal] = useState(null)
+  const [isDecorating, setIsDecorating] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     status: 'all', // all, original, processing, enhanced, failed
@@ -642,28 +643,46 @@ export default function ImageGallery({ searchQuery = '' }) {
               </button>
             </div>
             <p className="text-gray-600 mb-4">{t('decoration.decorateDescription')}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={async () => {
-                  try {
-                    await decorateRooms([decorateImageModal.id])
-                    setDecorateImageModal(null)
-                  } catch (error) {
-                    console.error('Error decorating room:', error)
-                  }
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all"
-              >
-                <Sofa className="w-5 h-5" />
-                {t('decoration.startDecoration')}
-              </button>
-              <button
-                onClick={() => setDecorateImageModal(null)}
-                className="px-4 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-            </div>
+
+            {isDecorating ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+                  <Sofa className="w-8 h-8 text-purple-600 animate-pulse" />
+                </div>
+                <p className="text-lg font-semibold text-gray-900 mb-2">{t('decoration.decorating')}</p>
+                <p className="text-sm text-gray-600">{t('decoration.pleaseWait')}</p>
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsDecorating(true)
+                      await decorateRooms([decorateImageModal.id])
+                      // Modal will close automatically after a short delay
+                      setTimeout(() => {
+                        setDecorateImageModal(null)
+                        setIsDecorating(false)
+                      }, 1000)
+                    } catch (error) {
+                      console.error('Error decorating room:', error)
+                      setIsDecorating(false)
+                      setDecorateImageModal(null)
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all"
+                >
+                  <Sofa className="w-5 h-5" />
+                  {t('decoration.startDecoration')}
+                </button>
+                <button
+                  onClick={() => setDecorateImageModal(null)}
+                  className="px-4 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

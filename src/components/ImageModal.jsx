@@ -18,6 +18,8 @@ export default function ImageModal({ image, onClose }) {
   const [showModelSelect, setShowModelSelect] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showWatermarkPanel, setShowWatermarkPanel] = useState(false)
+  const [isEnhancing, setIsEnhancing] = useState(false)
+  const [isDecorating, setIsDecorating] = useState(false)
 
   useEffect(() => {
     fetchAiModels()
@@ -60,13 +62,27 @@ export default function ImageModal({ image, onClose }) {
 
   const handleEnhance = async () => {
     if (selectedModel) {
-      await enhanceImages([image.id], selectedModel.id)
+      try {
+        setIsEnhancing(true)
+        await enhanceImages([image.id], selectedModel.id)
+      } catch (error) {
+        console.error('Error enhancing image:', error)
+      } finally {
+        setIsEnhancing(false)
+      }
     }
   }
 
   const handleDecorate = async () => {
     if (selectedModel) {
-      await decorateRooms([image.id], selectedModel.id)
+      try {
+        setIsDecorating(true)
+        await decorateRooms([image.id], selectedModel.id)
+      } catch (error) {
+        console.error('Error decorating room:', error)
+      } finally {
+        setIsDecorating(false)
+      }
     }
   }
 
@@ -396,21 +412,21 @@ export default function ImageModal({ image, onClose }) {
                     
                     <button
                       onClick={handleEnhance}
-                      disabled={!selectedModel}
+                      disabled={!selectedModel || isEnhancing || isDecorating}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-primary-600 hover:from-blue-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Sparkles className="w-5 h-5" />
-                      {image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance')}
+                      <Sparkles className={`w-5 h-5 ${isEnhancing ? 'animate-spin' : ''}`} />
+                      {isEnhancing ? t('images.enhancing') : (image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance'))}
                     </button>
 
                     {/* Decorate Button */}
                     <button
                       onClick={handleDecorate}
-                      disabled={!selectedModel}
+                      disabled={!selectedModel || isEnhancing || isDecorating}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Sofa className="w-5 h-5" />
-                      {t('decoration.decorateRoom')}
+                      <Sofa className={`w-5 h-5 ${isDecorating ? 'animate-pulse' : ''}`} />
+                      {isDecorating ? t('decoration.decorating') : t('decoration.decorateRoom')}
                     </button>
 
                     {/* Watermark Button */}
