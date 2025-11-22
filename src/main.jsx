@@ -7,18 +7,21 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ImageProvider } from './contexts/ImageContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { SettingsProvider } from './contexts/SettingsContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <LanguageProvider>
-        <AuthProvider>
-          <SettingsProvider>
-            <ImageProvider>
-              <App />
-            </ImageProvider>
-          </SettingsProvider>
-        </AuthProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <SettingsProvider>
+              <ImageProvider>
+                <App />
+              </ImageProvider>
+            </SettingsProvider>
+          </AuthProvider>
+        </NotificationProvider>
       </LanguageProvider>
     </BrowserRouter>
   </React.StrictMode>,

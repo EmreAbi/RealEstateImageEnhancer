@@ -13,14 +13,14 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    // Get from localStorage or browser language or default to 'en'
+    // Get from localStorage or browser language or default to 'tr' (Turkish)
     const saved = localStorage.getItem('language')
     if (saved && translations[saved]) return saved
 
     const browserLang = navigator.language.split('-')[0]
     if (translations[browserLang]) return browserLang
 
-    return 'en'
+    return 'tr' // Default to Turkish
   })
 
   useEffect(() => {
