@@ -8,7 +8,7 @@ import { addWatermark } from '../lib/supabase'
 export default function ImageWatermarkPanel({ image, onClose }) {
   const { t } = useLanguage()
   const { settings } = useSettings()
-  const { loadData } = useImages()
+  const { refreshData } = useImages()
 
   const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
@@ -32,7 +32,7 @@ export default function ImageWatermarkPanel({ image, onClose }) {
       })
 
       // Reload images to get updated watermarked URL
-      await loadData()
+      await refreshData()
 
       // Close panel after success
       if (onClose) {
