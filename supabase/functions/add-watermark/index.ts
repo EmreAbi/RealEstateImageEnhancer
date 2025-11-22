@@ -11,7 +11,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 // @ts-ignore Module resolution is handled by the Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.4?dts"
 // @ts-ignore Canvas for Deno
-import { Canvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts"
+import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts"
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -136,7 +136,7 @@ serve(async (req: Request) => {
     const logoImage = await loadImage(new Uint8Array(logoArrayBuffer))
 
     // Create canvas with source image dimensions
-    const canvas = new Canvas(sourceImage.width(), sourceImage.height())
+    const canvas = createCanvas(sourceImage.width(), sourceImage.height())
     const ctx = canvas.getContext("2d")
 
     // Draw source image
