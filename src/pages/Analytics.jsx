@@ -11,14 +11,15 @@ import {
   Sparkles,
   Image as ImageIcon,
   ArrowLeft,
-  Activity
+  Activity,
+  Coins
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Analytics() {
   const navigate = useNavigate()
   const { t } = useLanguage()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { images, aiModels } = useImages()
   const [enhancementLogs, setEnhancementLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -129,6 +130,34 @@ export default function Analytics() {
           </div>
         ) : (
           <>
+            {/* Credit Balance - Highlighted Card */}
+            <div className="mb-6">
+              <div className="card p-6 bg-gradient-to-br from-primary-50 to-primary-100 border-2 border-primary-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-primary-500 rounded-lg">
+                        <Coins className="w-6 h-6 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">{t('analytics.creditsRemaining')}</h3>
+                    </div>
+                    <p className="text-4xl font-bold text-primary-700">
+                      {profile?.credits_remaining?.toFixed(2) || '0.00'}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {t('analytics.creditsInfo')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-600 mb-1">{t('analytics.creditsUsed')}</div>
+                    <div className="text-2xl font-bold text-gray-900">
+                      {stats.totalCost.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="card p-6">
@@ -177,14 +206,14 @@ export default function Analytics() {
               <div className="card p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-orange-50 rounded-lg">
-                    <Activity className="w-5 h-5 text-orange-600" />
+                    <ImageIcon className="w-5 h-5 text-orange-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">{t('analytics.totalCredits')}</h3>
+                  <h3 className="font-semibold text-gray-700">{t('analytics.totalImages')}</h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">
-                  {stats.totalCost.toFixed(2)}
+                  {images.length}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">{t('analytics.spent')}</p>
+                <p className="text-sm text-gray-500 mt-1">{t('analytics.inYourLibrary')}</p>
               </div>
             </div>
 
@@ -274,6 +303,9 @@ export default function Analytics() {
                         {t('analytics.statusLabel')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                        {t('analytics.cost')}
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
                         {t('analytics.duration')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
@@ -285,7 +317,7 @@ export default function Analytics() {
                     {recentActivity.map((log) => (
                       <tr key={log.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {log.images?.name || 'N/A'}
+                          {log.images?.name || t('analytics.imageDeleted')}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {log.ai_models?.display_name || 'Unknown'}
@@ -303,6 +335,9 @@ export default function Analytics() {
                             {log.status === 'completed' ? t('analytics.successful') :
                              log.status === 'failed' ? t('analytics.failed') : t('analytics.processing')}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900">
+                          {log.cost_credits ? `${parseFloat(log.cost_credits).toFixed(2)}` : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '-'}
