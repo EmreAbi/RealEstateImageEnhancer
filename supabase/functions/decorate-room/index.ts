@@ -11,39 +11,40 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 // @ts-ignore Module resolution is handled by the Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.4?dts"
 
-const DEFAULT_PROMPT = `You are a professional real estate photo enhancement AI.
-Your ONLY task is to improve the photograph quality - as if it was taken with a better camera and lighting.
+const DEFAULT_DECORATION_PROMPT = `You are a professional interior designer AI specialized in virtual staging.
 
-CRITICAL: DO NOT change, add, remove, or modify ANY physical elements in the room.
-This is PHOTO ENHANCEMENT ONLY, not renovation or staging.
+Your task: Add stylish, realistic furniture and decorations to this empty room photo.
 
-What you MUST do (Camera & Lighting):
-- Improve overall exposure with soft, realistic daylight
-- Balance shadows and highlights naturally
-- Correct white balance to neutral, true-to-life tones
-- Enhance clarity and sharpness (as if using a professional camera)
-- Improve dynamic range for better detail visibility
-- Reduce any camera noise or blur
+CRITICAL RULES - Room Structure:
+- DO NOT change the room's shape, walls, ceiling, or floor
+- DO NOT modify windows, doors, radiators, or any architectural elements
+- DO NOT change wall colors or floor materials
+- Keep the exact same perspective and camera angle
+- Preserve all existing room dimensions
 
-What you MUST NEVER do:
-- DO NOT add or remove furniture, decorations, or any objects
-- DO NOT change floor materials, colors, or textures
-- DO NOT modify walls, ceiling, doors, windows, or any surfaces
-- DO NOT clean, repaint, or smooth any surfaces
-- DO NOT change the room's appearance in any way
-- DO NOT add glossy effects or make anything look new
-- DO NOT alter the room structure or perspective
+Furniture & Decoration Guidelines:
+- Add modern, elegant furniture that fits the room's size and style
+- Place items in logical, practical positions
+- Use a cohesive, harmonious color palette
+- Add appropriate lighting fixtures if the room needs them
+- Include tasteful decorations (plants, artwork, curtains, rugs)
+- Ensure furniture scale matches room proportions
 
-Result Requirements:
-- The room must look IDENTICAL to the original
-- Only the photo quality should improve
-- It should look like the same room photographed with:
-  * Better camera equipment
-  * Professional lighting setup
-  * Optimal camera settings
-- Natural, realistic result - not artificial or over-processed
+Style:
+- Modern and minimalist OR classic and elegant (choose based on room architecture)
+- Professional real estate staging quality
+- Photo-realistic rendering
+- Natural, inviting atmosphere
+- Well-balanced composition
 
-Think of this as: "Same room, better camera" - nothing else.`
+Quality Requirements:
+- High-resolution, magazine-quality result
+- Natural lighting and shadows
+- Realistic materials and textures
+- No artificial or cartoonish elements
+
+The result must look like a professionally staged, furnished room that could be used in a real estate listing.
+IMPORTANT: The empty room must look filled with furniture, but the room itself (walls, floor, windows, doors) must remain EXACTLY the same.`
 
 const MODEL_IDENTIFIER = "gpt-image-1"
 const OPENAI_ENDPOINT = "https://api.openai.com/v1/images/edits"
@@ -81,12 +82,12 @@ const encodeBase64 = (buffer: ArrayBuffer) => {
   const bytes = new Uint8Array(buffer)
   const chunkSize = 0x8000 // 32KB chunks to avoid stack overflow
   let binary = ''
-  
+
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize)
     binary += String.fromCharCode(...chunk)
   }
-  
+
   return btoa(binary)
 }
 
@@ -98,7 +99,7 @@ const corsHeaders = {
 }
 
 const errorResponse = (status: number, message: string, details?: Record<string, unknown>) => {
-  console.error("❌ enhance-image error", { status, message, details })
+  console.error("❌ decorate-room error", { status, message, details })
   return new Response(JSON.stringify({ error: message, details }), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -163,14 +164,14 @@ serve(async (req: Request) => {
     return errorResponse(500, "Failed to check user credits", { profileError })
   }
 
-  const creditsRequired = 1.0 // Each enhancement costs 1 credit
+  const creditsRequired = 1.5 // Room decoration costs 1.5 credits (more complex than simple enhancement)
   const currentBalance = profileData?.credits_remaining || 0
 
   if (currentBalance < creditsRequired) {
     return errorResponse(402, "Insufficient credits", {
       required: creditsRequired,
       available: currentBalance,
-      message: "You don't have enough credits to enhance this image. Each enhancement costs 1 credit."
+      message: "You don't have enough credits to decorate this room. Room decoration costs 1.5 credits."
     })
   }
 
@@ -187,7 +188,7 @@ serve(async (req: Request) => {
 
   console.log(`✅ Credits deducted: ${creditsRequired} (remaining: ${currentBalance - creditsRequired})`)
 
-  const enhancementStartMs = nowMs()
+  const decorationStartMs = nowMs()
 
   const {
     data: imageRecord,
@@ -228,9 +229,9 @@ serve(async (req: Request) => {
 
   const prompt = promptOverride?.trim().length
     ? promptOverride
-    : (typeof aiModelRecord?.settings?.default_prompt === "string"
-      ? aiModelRecord.settings.default_prompt
-      : DEFAULT_PROMPT)
+    : (typeof aiModelRecord?.settings?.decoration_prompt === "string"
+      ? aiModelRecord.settings.decoration_prompt
+      : DEFAULT_DECORATION_PROMPT)
 
   // Update image status to processing
   await serverClient
@@ -246,12 +247,13 @@ serve(async (req: Request) => {
     started_at: new Date().toISOString(),
     parameters: {
       prompt,
-      model: aiModelRecord.model_identifier
+      model: aiModelRecord.model_identifier,
+      operation: "room_decoration"
     }
   }
 
   const {
-    data: enhancementLog,
+    data: decorationLog,
     error: logInsertError
   } = await serverClient
     .from("enhancement_logs")
@@ -260,7 +262,7 @@ serve(async (req: Request) => {
     .single()
 
   if (logInsertError) {
-    return errorResponse(500, "Failed to create enhancement log", { logInsertError })
+    return errorResponse(500, "Failed to create decoration log", { logInsertError })
   }
 
   try {
@@ -277,7 +279,7 @@ serve(async (req: Request) => {
 
     // Determine provider based on model
     const provider = aiModelRecord.provider || 'openai'
-    let enhancedBase64: string
+    let decoratedBase64: string
 
     if (provider === 'fal-ai') {
       // FAL.AI Integration
@@ -291,7 +293,7 @@ serve(async (req: Request) => {
         throw new Error(`Unsupported FAL.AI model: ${aiModelRecord.model_identifier}`)
       }
 
-      console.log(`🎨 Using FAL.AI ${aiModelRecord.display_name} for enhancement`)
+      console.log(`🎨 Using FAL.AI ${aiModelRecord.display_name} for room decoration`)
 
       // Convert image to base64 for FAL.AI using chunk-based encoding
       const base64Image = encodeBase64(sourceArrayBuffer)
@@ -305,8 +307,7 @@ serve(async (req: Request) => {
       }
 
       // Different models use different parameter names for the input image
-      // Reve and Nano Banana Pro use image_urls (array), Flux Pro uses image_url (string)
-      if (aiModelRecord.model_identifier === 'fal-ai/reve/remix' || 
+      if (aiModelRecord.model_identifier === 'fal-ai/reve/remix' ||
           aiModelRecord.model_identifier === 'fal-ai/nano-banana-pro/edit') {
         falPayload.image_urls = [dataUrl]
       } else {
@@ -343,65 +344,60 @@ serve(async (req: Request) => {
 
       const falResult = await falResponse.json()
       console.log("📦 FAL.AI initial response keys:", Object.keys(falResult))
-      
+
       // Handle both sync and async (queue) responses
       let imageUrl: string | undefined
-      
+
       if (falResult.images && falResult.images.length > 0) {
-        // Sync response
         imageUrl = falResult.images[0].url
         console.log("✅ Sync response - got image URL immediately")
       } else if (falResult.image && falResult.image.url) {
-        // Alternative sync response format
         imageUrl = falResult.image.url
         console.log("✅ Sync response (alt format) - got image URL immediately")
       } else if (falResult.status_url || falResult.request_id) {
-        // Async/queue response - poll for completion
         console.log("📊 FAL.AI request queued, polling for completion...")
         const statusUrl = falResult.status_url
-        const maxAttempts = 120 // 120 seconds (2 minutes) max for queue models
+        const maxAttempts = 120
         let attempts = 0
-        
+
         while (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+          await new Promise(resolve => setTimeout(resolve, 1000))
           attempts++
-          
+
           const statusResponse = await fetch(statusUrl, {
             headers: { "Authorization": `Key ${falAiApiKey}` }
           })
-          
+
           if (!statusResponse.ok) {
             throw new Error(`Failed to check FAL.AI status: ${statusResponse.status}`)
           }
-          
+
           const statusResult = await statusResponse.json()
           console.log(`⏳ FAL.AI status check ${attempts}s: ${statusResult.status}`)
-          
+
           if (statusResult.status === "COMPLETED") {
             console.log(`📊 Completed response keys:`, Object.keys(statusResult))
-            
-            // For queue responses, we need to fetch the actual result from response_url
+
             if (statusResult.response_url) {
               console.log(`🔗 Fetching result from response_url...`)
               const resultResponse = await fetch(statusResult.response_url, {
                 headers: { "Authorization": `Key ${falAiApiKey}` }
               })
-              
+
               if (!resultResponse.ok) {
                 throw new Error(`Failed to fetch result from response_url: ${resultResponse.status}`)
               }
-              
+
               const resultData = await resultResponse.json()
               console.log(`📦 Result data keys:`, Object.keys(resultData))
               imageUrl = resultData.images?.[0]?.url || resultData.image?.url
             } else {
-              // Fallback: try to get image directly from status result
-              imageUrl = statusResult.images?.[0]?.url || 
-                        statusResult.image?.url || 
+              imageUrl = statusResult.images?.[0]?.url ||
+                        statusResult.image?.url ||
                         statusResult.data?.images?.[0]?.url ||
                         statusResult.data?.image?.url
             }
-            
+
             console.log(`✅ FAL.AI processing completed after ${attempts} seconds`)
             console.log(`🖼️ Image URL extracted: ${imageUrl ? 'YES' : 'NO'}`)
             if (!imageUrl) {
@@ -413,25 +409,24 @@ serve(async (req: Request) => {
             console.error(`❌ FAL.AI processing failed:`, errorDetails)
             throw new Error(`FAL.AI processing failed: ${errorDetails}`)
           }
-          // Continue polling if IN_PROGRESS or IN_QUEUE
         }
-        
+
         if (!imageUrl) {
           throw new Error(`FAL.AI processing timed out after ${attempts} seconds`)
         }
       }
-      
+
       if (!imageUrl) {
         throw new Error("FAL.AI API did not return any image data")
       }
 
-      const enhancedImageResponse = await fetch(imageUrl)
-      if (!enhancedImageResponse.ok) {
-        throw new Error(`Failed to download enhanced image from FAL.AI: ${enhancedImageResponse.status}`)
+      const decoratedImageResponse = await fetch(imageUrl)
+      if (!decoratedImageResponse.ok) {
+        throw new Error(`Failed to download decorated image from FAL.AI: ${decoratedImageResponse.status}`)
       }
 
-      const enhancedArrayBuffer = await enhancedImageResponse.arrayBuffer()
-      enhancedBase64 = encodeBase64(enhancedArrayBuffer)
+      const decoratedArrayBuffer = await decoratedImageResponse.arrayBuffer()
+      decoratedBase64 = encodeBase64(decoratedArrayBuffer)
 
     } else {
       // OpenAI Integration (default)
@@ -439,7 +434,7 @@ serve(async (req: Request) => {
         throw new Error("OPENAI_API_KEY is not configured")
       }
 
-      console.log("🤖 Using OpenAI GPT-Image-1 for enhancement")
+      console.log("🤖 Using OpenAI GPT-Image-1 for room decoration")
 
       const formData = new FormData()
       formData.append("model", "gpt-image-1")
@@ -460,47 +455,48 @@ serve(async (req: Request) => {
       }
 
       const openAiPayload = await openAiResponse.json()
-      enhancedBase64 = openAiPayload?.data?.[0]?.b64_json
+      decoratedBase64 = openAiPayload?.data?.[0]?.b64_json
 
-      if (!enhancedBase64) {
+      if (!decoratedBase64) {
         throw new Error("OpenAI API did not return any image data")
       }
     }
 
     // Decode base64 to binary
-    const enhancedBytes = decodeBase64(enhancedBase64)
-    const enhancedBlob = new Blob([enhancedBytes], { type: "image/png" })
+    const decoratedBytes = decodeBase64(decoratedBase64)
+    const decoratedBlob = new Blob([decoratedBytes], { type: "image/png" })
 
-    const enhancedPath = `${user.id}/${imageRecord.folder_id}/enhanced-${crypto.randomUUID()}.png`
+    const decoratedPath = `${user.id}/${imageRecord.folder_id}/decorated-${crypto.randomUUID()}.png`
 
     const { error: uploadError } = await serverClient
       .storage
       .from("images")
-      .upload(enhancedPath, enhancedBlob, {
+      .upload(decoratedPath, decoratedBlob, {
         contentType: "image/png",
         cacheControl: "3600",
         upsert: false
       })
 
     if (uploadError) {
-      throw new Error(`Failed to upload enhanced image: ${uploadError.message}`)
+      throw new Error(`Failed to upload decorated image: ${uploadError.message}`)
     }
 
     const {
-      data: { publicUrl: enhancedUrl }
+      data: { publicUrl: decoratedUrl }
     } = serverClient.storage
       .from("images")
-      .getPublicUrl(enhancedPath)
+      .getPublicUrl(decoratedPath)
 
     const updatePayload = {
-      enhanced_url: enhancedUrl,
+      enhanced_url: decoratedUrl,
       status: "enhanced",
       metadata: {
         ...(imageRecord.metadata ?? {}),
-        enhancement: {
-          ...(imageRecord.metadata?.enhancement ?? {}),
+        decoration: {
+          ...(imageRecord.metadata?.decoration ?? {}),
           model: aiModelRecord.model_identifier,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          operation: "room_decoration"
         }
       }
     }
@@ -519,12 +515,13 @@ serve(async (req: Request) => {
       throw new Error(`Failed to update image record: ${updateError.message}`)
     }
 
-    const enhancementDurationMs = Math.round(nowMs() - enhancementStartMs)
+    const decorationDurationMs = Math.round(nowMs() - decorationStartMs)
 
     const logMetadata = {
-      ...(enhancementLog.metadata ?? {}),
+      ...(decorationLog.metadata ?? {}),
       model_identifier: aiModelRecord.model_identifier,
-      provider: provider
+      provider: provider,
+      operation: "room_decoration"
     }
 
     const {
@@ -535,23 +532,23 @@ serve(async (req: Request) => {
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        duration_ms: enhancementDurationMs,
-        result_url: enhancedUrl,
+        duration_ms: decorationDurationMs,
+        result_url: decoratedUrl,
         metadata: logMetadata
       })
-      .eq("id", enhancementLog.id)
+      .eq("id", decorationLog.id)
       .select()
       .single()
 
     if (logUpdateError) {
-      console.warn("⚠️ Failed to update enhancement log", logUpdateError)
+      console.warn("⚠️ Failed to update decoration log", logUpdateError)
     }
 
     return new Response(
       JSON.stringify({
         image: updatedImage,
-        log: completedLog ?? enhancementLog,
-        enhancedUrl
+        log: completedLog ?? decorationLog,
+        decoratedUrl
       }),
       {
         status: 200,
@@ -559,7 +556,7 @@ serve(async (req: Request) => {
       }
     )
   } catch (error) {
-    console.error("❌ enhance-image processing failure", error)
+    console.error("❌ decorate-room processing failure", error)
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
 
@@ -585,9 +582,9 @@ serve(async (req: Request) => {
         status: "failed",
         completed_at: new Date().toISOString(),
         error_message: errorMessage,
-        cost_credits: 0.0 // No cost since it failed and was refunded
+        cost_credits: 0.0
       })
-      .eq("id", enhancementLog.id)
+      .eq("id", decorationLog.id)
 
     return errorResponse(500, errorMessage)
   }

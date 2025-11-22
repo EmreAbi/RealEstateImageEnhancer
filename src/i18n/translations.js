@@ -214,6 +214,10 @@ export const translations = {
       imageEnhancedMessage: '{imageName} has been enhanced successfully',
       imageEnhanceFailed: 'Enhancement Failed',
       imageEnhanceFailedMessage: 'Failed to enhance {imageName}. Please try again.',
+      roomDecorated: 'Room Decorated',
+      roomDecoratedMessage: '{imageName} has been decorated successfully',
+      roomDecorateFailed: 'Decoration Failed',
+      roomDecorateFailedMessage: 'Failed to decorate {imageName}. Please try again.',
       justNow: 'Just now',
       minutesAgo: '{minutes}m ago',
       hoursAgo: '{hours}h ago',
@@ -301,6 +305,14 @@ export const translations = {
     },
 
     // Watermark
+    decoration: {
+      decorateRoom: 'Decorate Room',
+      decorateDescription: 'Add stylish furniture and decorations to this empty room. The AI will preserve the room structure while adding realistic furnishings.',
+      startDecoration: 'Start Decoration',
+      decorating: 'Decorating room...',
+      decorated: 'Room Decorated',
+    },
+
     watermark: {
       addWatermark: 'Add Company Watermark',
       noLogo: 'Upload logo in Settings first',
@@ -545,6 +557,10 @@ export const translations = {
       imageEnhancedMessage: '{imageName} başarıyla iyileştirildi',
       imageEnhanceFailed: 'İyileştirme Başarısız',
       imageEnhanceFailedMessage: '{imageName} iyileştirilemedi. Lütfen tekrar deneyin.',
+      roomDecorated: 'Oda Döşendi',
+      roomDecoratedMessage: '{imageName} başarıyla döşendi',
+      roomDecorateFailed: 'Döşeme Başarısız',
+      roomDecorateFailedMessage: '{imageName} döşenemedi. Lütfen tekrar deneyin.',
       justNow: 'Şimdi',
       minutesAgo: '{minutes} dk önce',
       hoursAgo: '{hours} sa önce',
@@ -632,6 +648,14 @@ export const translations = {
     },
 
     // Watermark
+    decoration: {
+      decorateRoom: 'Odayı Döşe',
+      decorateDescription: 'Bu boş odaya stilistik mobilya ve dekorasyon ekleyin. AI, oda yapısını koruyarak gerçekçi mobilyalar ekleyecektir.',
+      startDecoration: 'Döşemeye Başla',
+      decorating: 'Oda döşeniyor...',
+      decorated: 'Oda Döşendi',
+    },
+
     watermark: {
       addWatermark: 'Firma Filigranı Ekle',
       noLogo: 'Önce Ayarlar\'dan logo yükleyin',
