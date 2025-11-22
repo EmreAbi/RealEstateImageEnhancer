@@ -246,14 +246,23 @@ export const getUserImages = async (userId, retries = 3) => {
           // Try using fetch directly as a workaround for hanging client
           console.log('🌐 Attempting direct REST API call...')
 
-          const { data: { session } } = await supabase.auth.getSession()
+          // Get token from localStorage directly to avoid hanging getSession() call
+          const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+          console.log('🔑 Looking for token in localStorage with key:', storageKey)
 
-          if (!session?.access_token) {
-            console.error('❌ No access token available')
+          const authData = localStorage.getItem(storageKey)
+          if (!authData) {
+            console.error('❌ No auth data in localStorage')
+            throw new Error('No auth data')
+          }
+
+          const { access_token } = JSON.parse(authData)
+          if (!access_token) {
+            console.error('❌ No access token in stored data')
             throw new Error('No access token')
           }
 
-          console.log('🔑 Access token retrieved, making fetch request...')
+          console.log('✅ Access token retrieved from localStorage, making fetch request...')
 
           const fetchUrl = `${supabaseUrl}/rest/v1/images?user_id=eq.${userId}&order=created_at.desc&select=*`
           console.log('📡 Fetch URL:', fetchUrl)
@@ -262,7 +271,7 @@ export const getUserImages = async (userId, retries = 3) => {
             method: 'GET',
             headers: {
               'apikey': supabaseAnonKey,
-              'Authorization': `Bearer ${session.access_token}`,
+              'Authorization': `Bearer ${access_token}`,
               'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             }
