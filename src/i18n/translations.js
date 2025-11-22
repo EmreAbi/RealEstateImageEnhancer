@@ -147,6 +147,12 @@ export const translations = {
       date: 'Date',
       size: 'Size',
       operations: 'Operations',
+      viewMode: 'View Mode',
+      showingOriginal: 'Showing Original',
+      showingProcessed: 'Showing Processed',
+      processed: 'Processed',
+      enhanceImage: 'Enhance Image',
+      enhanceTip: 'AI enhancement improves lighting, exposure, and clarity while preserving the original composition.',
     },
 
     // Settings
@@ -312,6 +318,8 @@ export const translations = {
       decorating: 'Decorating room...',
       decorated: 'Room Decorated',
       pleaseWait: 'This may take a few moments. Please wait...',
+      virtualStaging: 'Virtual staging with AI-generated furniture and decorations',
+      tip: 'Virtual staging helps potential buyers visualize the space while keeping the original room structure intact.',
     },
 
     watermark: {
@@ -340,6 +348,7 @@ export const translations = {
       configureSettings: 'Configure watermark settings',
       apply: 'Apply Watermark',
       error: 'Failed to add watermark',
+      tip: 'Watermarks protect your images and add your branding. Adjust opacity and size for the perfect balance.',
     },
   },
 
@@ -491,6 +500,12 @@ export const translations = {
       date: 'Tarih',
       size: 'Boyut',
       operations: 'İşlemler',
+      viewMode: 'Görünüm Modu',
+      showingOriginal: 'Orijinal Gösteriliyor',
+      showingProcessed: 'İşlenmiş Gösteriliyor',
+      processed: 'İşlenmiş',
+      enhanceImage: 'Görseli İyileştir',
+      enhanceTip: 'AI iyileştirme, orijinal kompozisyonu koruyarak aydınlatma, pozlama ve netliği geliştirir.',
     },
 
     // Settings
@@ -656,6 +671,8 @@ export const translations = {
       decorating: 'Oda döşeniyor...',
       decorated: 'Oda Döşendi',
       pleaseWait: 'Bu birkaç dakika sürebilir. Lütfen bekleyin...',
+      virtualStaging: 'AI ile oluşturulmuş mobilya ve dekorasyonlarla sanal döşeme',
+      tip: 'Sanal döşeme, orijinal oda yapısını koruyarak potansiyel alıcıların mekanı hayal etmesine yardımcı olur.',
     },
 
     watermark: {
@@ -684,6 +701,7 @@ export const translations = {
       configureSettings: 'Filigran ayarlarını yapılandır',
       apply: 'Filigran Uygula',
       error: 'Filigran eklenemedi',
+      tip: 'Filigranlar görsellerinizi korur ve markanızı ekler. Mükemmel denge için opaklık ve boyutu ayarlayın.',
     },
   },
 
