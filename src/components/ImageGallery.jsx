@@ -10,11 +10,14 @@ import {
   AlertTriangle,
   Image as ImageIcon,
   Calendar,
-  HardDrive
+  HardDrive,
+  X,
+  SlidersHorizontal
 } from 'lucide-react'
 import ImageModal from './ImageModal'
+import DashboardStats from './DashboardStats'
 
-export default function ImageGallery() {
+export default function ImageGallery({ searchQuery = '' }) {
   const {
     images,
     selectedFolder,
@@ -28,6 +31,12 @@ export default function ImageGallery() {
   } = useImages()
 
   const [imageModal, setImageModal] = useState(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState({
+    status: 'all', // all, original, processing, enhanced, failed
+    dateRange: 'all', // all, today, week, month
+    sortBy: 'newest' // newest, oldest, name
+  })
 
   useEffect(() => {
     if (!imageModal) return
@@ -42,9 +51,51 @@ export default function ImageGallery() {
     }
   }, [images, imageModal])
 
-  const displayImages = selectedFolder
+  // Apply search and filters
+  let displayImages = selectedFolder
     ? getImagesByFolder(selectedFolder.id)
     : images
+
+  // Search filter
+  if (searchQuery.trim()) {
+    displayImages = displayImages.filter(img =>
+      img.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }
+
+  // Status filter
+  if (filters.status !== 'all') {
+    displayImages = displayImages.filter(img => img.status === filters.status)
+  }
+
+  // Date range filter
+  if (filters.dateRange !== 'all') {
+    const now = new Date()
+    displayImages = displayImages.filter(img => {
+      const imgDate = new Date(img.created_at)
+      const diffTime = Math.abs(now - imgDate)
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+      if (filters.dateRange === 'today') return diffDays <= 1
+      if (filters.dateRange === 'week') return diffDays <= 7
+      if (filters.dateRange === 'month') return diffDays <= 30
+      return true
+    })
+  }
+
+  // Sort
+  displayImages = [...displayImages].sort((a, b) => {
+    if (filters.sortBy === 'newest') {
+      return new Date(b.created_at) - new Date(a.created_at)
+    }
+    if (filters.sortBy === 'oldest') {
+      return new Date(a.created_at) - new Date(b.created_at)
+    }
+    if (filters.sortBy === 'name') {
+      return a.name.localeCompare(b.name)
+    }
+    return 0
+  })
 
   const handleSelectAll = () => {
     if (selectedImages.length === displayImages.length) {
@@ -106,24 +157,142 @@ export default function ImageGallery() {
 
   if (displayImages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-          <ImageIcon className="w-12 h-12 text-gray-400" />
+      <div className="p-6">
+        {!selectedFolder && <DashboardStats />}
+
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+            <ImageIcon className="w-12 h-12 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {searchQuery || filters.status !== 'all' || filters.dateRange !== 'all'
+              ? 'Sonuç bulunamadı'
+              : 'Henüz görsel yok'
+            }
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-md">
+            {searchQuery || filters.status !== 'all' || filters.dateRange !== 'all'
+              ? 'Arama ve filtrelerinizle eşleşen görsel bulunamadı. Filtreleri değiştirmeyi deneyin.'
+              : selectedFolder
+                ? 'Bu klasörde henüz görsel bulunmuyor. Yükle butonuna tıklayarak görsel ekleyin.'
+                : 'Başlamak için görsel yükleyin veya bir klasör oluşturun.'}
+          </p>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Henüz görsel yok
-        </h3>
-        <p className="text-gray-600 mb-6 max-w-md">
-          {selectedFolder
-            ? 'Bu klasörde henüz görsel bulunmuyor. Yükle butonuna tıklayarak görsel ekleyin.'
-            : 'Başlamak için görsel yükleyin veya bir klasör oluşturun.'}
-        </p>
       </div>
     )
   }
 
   return (
     <div className="p-6">
+      {/* Dashboard Stats - Only show when viewing all images */}
+      {!selectedFolder && <DashboardStats />}
+
+      {/* Filters Bar */}
+      <div className="mb-6 flex items-center gap-3 flex-wrap">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            showFilters || filters.status !== 'all' || filters.dateRange !== 'all' || filters.sortBy !== 'newest'
+              ? 'bg-primary-100 text-primary-700 border border-primary-300'
+              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          <span className="text-sm font-medium">Filtrele</span>
+        </button>
+
+        {/* Active Filters Display */}
+        {(filters.status !== 'all' || filters.dateRange !== 'all' || filters.sortBy !== 'newest') && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {filters.status !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                Durum: {filters.status === 'original' ? 'Orijinal' :
+                       filters.status === 'enhanced' ? 'İyileştirilmiş' :
+                       filters.status === 'processing' ? 'İşleniyor' : 'Hatalı'}
+                <button onClick={() => setFilters({...filters, status: 'all'})} className="ml-1">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.dateRange !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                Tarih: {filters.dateRange === 'today' ? 'Bugün' :
+                       filters.dateRange === 'week' ? 'Bu Hafta' : 'Bu Ay'}
+                <button onClick={() => setFilters({...filters, dateRange: 'all'})} className="ml-1">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.sortBy !== 'newest' && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                Sıralama: {filters.sortBy === 'oldest' ? 'En Eski' : 'İsme Göre'}
+                <button onClick={() => setFilters({...filters, sortBy: 'newest'})} className="ml-1">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              onClick={() => setFilters({ status: 'all', dateRange: 'all', sortBy: 'newest' })}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Tümünü Temizle
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Filter Dropdowns */}
+      {showFilters && (
+        <div className="mb-6 card p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Durum</label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              >
+                <option value="all">Tümü</option>
+                <option value="original">Orijinal</option>
+                <option value="processing">İşleniyor</option>
+                <option value="enhanced">İyileştirilmiş</option>
+                <option value="failed">Hatalı</option>
+              </select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tarih Aralığı</label>
+              <select
+                value={filters.dateRange}
+                onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              >
+                <option value="all">Tüm Zamanlar</option>
+                <option value="today">Bugün</option>
+                <option value="week">Bu Hafta</option>
+                <option value="month">Bu Ay</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sıralama</label>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              >
+                <option value="newest">En Yeni</option>
+                <option value="oldest">En Eski</option>
+                <option value="name">İsme Göre</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gallery Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -133,6 +302,7 @@ export default function ImageGallery() {
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               {displayImages.length} görsel
+              {searchQuery && ` - "${searchQuery}" için sonuçlar`}
             </p>
           </div>
 

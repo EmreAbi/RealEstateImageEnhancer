@@ -9,11 +9,12 @@ import {
   ChevronDown,
   Search,
   Bell,
-  Settings
+  Settings,
+  BarChart3
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-export default function Header({ onToggleSidebar, onUpload }) {
+export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
   const { user, profile, logout } = useAuth()
   const { selectedImages, enhanceImages, clearSelection } = useImages()
   const navigate = useNavigate()
@@ -61,6 +62,8 @@ export default function Header({ onToggleSidebar, onUpload }) {
               <input
                 type="text"
                 placeholder="Görsel ara..."
+                value={searchQuery || ''}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
               />
             </div>
@@ -150,6 +153,17 @@ export default function Header({ onToggleSidebar, onUpload }) {
                     <div className="p-2">
                       <button
                         onClick={() => {
+                          navigate('/dashboard/analytics')
+                          setShowUserMenu(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <BarChart3 className="w-5 h-5" />
+                        <span className="text-sm font-medium">İstatistikler</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
                           navigate('/dashboard/settings')
                           setShowUserMenu(false)
                         }}
@@ -180,6 +194,8 @@ export default function Header({ onToggleSidebar, onUpload }) {
           <input
             type="text"
             placeholder="Görsel ara..."
+            value={searchQuery || ''}
+            onChange={(e) => onSearchChange?.(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
           />
         </div>
