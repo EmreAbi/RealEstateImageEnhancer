@@ -407,3 +407,125 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
   console.log('✅ invokeImageEnhancement success:', data)
   return data
 }
+
+/**
+ * Share Links Functions
+ */
+
+/**
+ * Create a share link for an image
+ */
+export const createShareLink = async (imageId, options = {}) => {
+  const { title, description, expiresInDays, password } = options
+
+  // Generate random token
+  const shareToken = Math.random().toString(36).substring(2, 14) + Math.random().toString(36).substring(2, 14)
+
+  const linkData = {
+    image_id: imageId,
+    user_id: (await getCurrentUser())?.id,
+    share_token: shareToken,
+    title: title || null,
+    description: description || null,
+    expires_at: expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString() : null,
+    password_hash: password || null, // TODO: Hash password properly
+    is_active: true
+  }
+
+  const { data, error } = await supabase
+    .from('share_links')
+    .insert([linkData])
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Get all share links for a user
+ */
+export const getUserShareLinks = async (userId) => {
+  const { data, error } = await supabase
+    .from('share_links')
+    .select(`
+      *,
+      images (
+        name,
+        original_url,
+        enhanced_url
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Get share link by token (public access)
+ */
+export const getShareLinkByToken = async (token) => {
+  const { data, error } = await supabase
+    .from('share_links')
+    .select(`
+      *,
+      images (
+        name,
+        original_url,
+        enhanced_url,
+        file_size,
+        created_at
+      ),
+      profiles (
+        username,
+        real_estate_office
+      )
+    `)
+    .eq('share_token', token)
+    .eq('is_active', true)
+    .single()
+
+  if (error) throw error
+
+  // Check if expired
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    throw new Error('Bu paylaşım linki süresi dolmuş')
+  }
+
+  // Increment view count
+  await supabase
+    .from('share_links')
+    .update({ view_count: data.view_count + 1 })
+    .eq('id', data.id)
+
+  return data
+}
+
+/**
+ * Delete share link
+ */
+export const deleteShareLink = async (linkId) => {
+  const { error } = await supabase
+    .from('share_links')
+    .delete()
+    .eq('id', linkId)
+
+  if (error) throw error
+}
+
+/**
+ * Toggle share link active status
+ */
+export const toggleShareLink = async (linkId, isActive) => {
+  const { data, error } = await supabase
+    .from('share_links')
+    .update({ is_active: isActive })
+    .eq('id', linkId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}

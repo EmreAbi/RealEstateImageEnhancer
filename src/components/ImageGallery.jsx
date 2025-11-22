@@ -12,10 +12,12 @@ import {
   Calendar,
   HardDrive,
   X,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Archive
 } from 'lucide-react'
 import ImageModal from './ImageModal'
 import DashboardStats from './DashboardStats'
+import JSZip from 'jszip'
 
 export default function ImageGallery({ searchQuery = '' }) {
   const {
@@ -109,6 +111,59 @@ export default function ImageGallery({ searchQuery = '' }) {
     if (selectedImages.length === 0) return
     if (confirm(`${selectedImages.length} görseli silmek istediğinize emin misiniz?`)) {
       deleteImages(selectedImages)
+    }
+  }
+
+  const handleBulkDownload = async () => {
+    if (selectedImages.length === 0) return
+
+    try {
+      const zip = new JSZip()
+      const selectedImagesData = images.filter(img => selectedImages.includes(img.id))
+
+      // Show progress
+      let completed = 0
+      const totalImages = selectedImagesData.length
+
+      for (const image of selectedImagesData) {
+        try {
+          // Use enhanced URL if available, otherwise original
+          const imageUrl = image.enhanced_url || image.original_url
+
+          // Fetch image as blob
+          const response = await fetch(imageUrl)
+          const blob = await response.blob()
+
+          // Add to zip with proper name
+          const fileName = image.name
+          zip.file(fileName, blob)
+
+          completed++
+          console.log(`Downloaded ${completed}/${totalImages}: ${fileName}`)
+        } catch (error) {
+          console.error(`Error downloading ${image.name}:`, error)
+        }
+      }
+
+      // Generate and download ZIP
+      console.log('Generating ZIP file...')
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
+
+      // Create download link
+      const url = URL.createObjectURL(zipBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `images-${new Date().getTime()}.zip`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      console.log('ZIP download complete!')
+      clearSelection()
+    } catch (error) {
+      console.error('Error creating ZIP:', error)
+      alert('ZIP oluşturulurken bir hata oluştu: ' + error.message)
     }
   }
 
@@ -309,6 +364,14 @@ export default function ImageGallery({ searchQuery = '' }) {
           {/* Action Buttons */}
           {selectedImages.length > 0 && (
             <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkDownload}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                title="Seçili görselleri ZIP olarak indir"
+              >
+                <Archive className="w-4 h-4" />
+                <span className="hidden sm:inline">İndir ({selectedImages.length})</span>
+              </button>
               <button
                 onClick={handleDelete}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"

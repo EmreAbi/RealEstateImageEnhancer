@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw } from 'lucide-react'
+import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2 } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { supabase } from '../lib/supabase'
+import ShareModal from './ShareModal'
 
 export default function ImageModal({ image, onClose }) {
   const { enhanceImages } = useImages()
@@ -12,6 +13,7 @@ export default function ImageModal({ image, onClose }) {
   const [aiModels, setAiModels] = useState([])
   const [selectedModel, setSelectedModel] = useState(null)
   const [showModelSelect, setShowModelSelect] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   useEffect(() => {
     fetchAiModels()
