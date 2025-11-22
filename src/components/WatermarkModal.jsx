@@ -14,15 +14,28 @@ export default function WatermarkModal({ imageIds, onClose }) {
   const [progress, setProgress] = useState([])
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  // Load saved settings from localStorage
+  const savedSettings = JSON.parse(localStorage.getItem('watermarkSettings') || '{}')
+
   // Watermark settings
-  const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
-  const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
-  const [logoSize, setLogoSize] = useState(10) // Percentage
+  const [watermarkPosition, setWatermarkPosition] = useState(savedSettings.position || 'bottom-right')
+  const [watermarkOpacity, setWatermarkOpacity] = useState(savedSettings.opacity || 0.3)
+  const [logoSize, setLogoSize] = useState(savedSettings.logoSize || 10) // Percentage
 
   const hasCompanyLogo = Boolean(settings.companyLogo)
 
   const selectedImages = images.filter(img => imageIds.includes(img.id))
   const totalImages = selectedImages.length
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    const settingsToSave = {
+      position: watermarkPosition,
+      opacity: watermarkOpacity,
+      logoSize: logoSize
+    }
+    localStorage.setItem('watermarkSettings', JSON.stringify(settingsToSave))
+  }, [watermarkPosition, watermarkOpacity, logoSize])
 
   useEffect(() => {
     // Initialize progress array
