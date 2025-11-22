@@ -217,28 +217,54 @@ export const getImagesByFolder = async (folderId) => {
 }
 
 /**
- * Get all images for a user
+ * Get all images for a user with retry logic
  */
-export const getUserImages = async (userId) => {
+export const getUserImages = async (userId, retries = 3) => {
   console.log('🖼️  getUserImages called for userId:', userId)
 
-  const { data, error } = await supabase
-    .from('images')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 15000) // 15s timeout
+      )
 
-  if (error) {
-    console.error('❌ getUserImages error:', error)
-    console.error('Error code:', error.code)
-    console.error('Error details:', error.details)
-    throw error
+      const queryPromise = supabase
+        .from('images')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+
+      if (error) {
+        console.error(`❌ getUserImages error (attempt ${attempt}/${retries}):`, error)
+        console.error('Error code:', error.code)
+        console.error('Error details:', error.details)
+
+        if (attempt === retries) {
+          throw error
+        }
+
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+        continue
+      }
+
+      console.log('✅ getUserImages returned:', data?.length, 'images')
+      console.log('📊 Raw data:', data)
+
+      return data
+    } catch (err) {
+      console.error(`❌ getUserImages attempt ${attempt}/${retries} failed:`, err.message)
+
+      if (attempt === retries) {
+        throw err
+      }
+
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+    }
   }
-
-  console.log('✅ getUserImages returned:', data?.length, 'images')
-  console.log('📊 Raw data:', data)
-
-  return data
 }
 
 /**
