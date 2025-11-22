@@ -7,7 +7,6 @@ import {
   Check,
   Clock,
   Sparkles,
-  Droplet,
   CheckCircle2,
   AlertTriangle,
   Image as ImageIcon,
@@ -15,11 +14,9 @@ import {
   HardDrive,
   X,
   SlidersHorizontal,
-  Archive,
-  Sofa
+  Archive
 } from 'lucide-react'
 import ImageModal from './ImageModal'
-import ImageWatermarkPanel from './ImageWatermarkPanel'
 import DashboardStats from './DashboardStats'
 import JSZip from 'jszip'
 
@@ -39,9 +36,6 @@ export default function ImageGallery({ searchQuery = '' }) {
   } = useImages()
 
   const [imageModal, setImageModal] = useState(null)
-  const [watermarkImageModal, setWatermarkImageModal] = useState(null)
-  const [decorateImageModal, setDecorateImageModal] = useState(null)
-  const [isDecorating, setIsDecorating] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     status: 'all', // all, original, processing, enhanced, failed
@@ -495,26 +489,6 @@ export default function ImageGallery({ searchQuery = '' }) {
                 >
                   <ImageIcon className="w-5 h-5 text-gray-700" />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDecorateImageModal(image)
-                  }}
-                  className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
-                  title={t('decoration.decorateRoom')}
-                >
-                  <Sofa className="w-5 h-5 text-purple-600" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setWatermarkImageModal(image)
-                  }}
-                  className="p-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
-                  title={t('watermark.addWatermark')}
-                >
-                  <Droplet className="w-5 h-5 text-blue-600" />
-                </button>
                 <a
                   href={image.watermarked_url || image.enhanced_url || image.original_url}
                   download={image.name}
@@ -626,76 +600,6 @@ export default function ImageGallery({ searchQuery = '' }) {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Decorate Modal */}
-      {decorateImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">{t('decoration.decorateRoom')}</h3>
-              <button
-                onClick={() => setDecorateImageModal(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-4">{t('decoration.decorateDescription')}</p>
-
-            {isDecorating ? (
-              <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-                  <Sofa className="w-8 h-8 text-purple-600 animate-pulse" />
-                </div>
-                <p className="text-lg font-semibold text-gray-900 mb-2">{t('decoration.decorating')}</p>
-                <p className="text-sm text-gray-600">{t('decoration.pleaseWait')}</p>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={async () => {
-                    try {
-                      setIsDecorating(true)
-                      await decorateRooms([decorateImageModal.id])
-                      // Modal will close automatically after a short delay
-                      setTimeout(() => {
-                        setDecorateImageModal(null)
-                        setIsDecorating(false)
-                      }, 1000)
-                    } catch (error) {
-                      console.error('Error decorating room:', error)
-                      setIsDecorating(false)
-                      setDecorateImageModal(null)
-                    }
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all"
-                >
-                  <Sofa className="w-5 h-5" />
-                  {t('decoration.startDecoration')}
-                </button>
-                <button
-                  onClick={() => setDecorateImageModal(null)}
-                  className="px-4 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  {t('common.cancel')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Watermark Modal */}
-      {watermarkImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <ImageWatermarkPanel
-              image={watermarkImageModal}
-              onClose={() => setWatermarkImageModal(null)}
-            />
-          </div>
         </div>
       )}
 
