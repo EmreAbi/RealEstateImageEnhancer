@@ -17,6 +17,7 @@ export default function WatermarkModal({ imageIds, onClose }) {
   // Watermark settings
   const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
+  const [logoSize, setLogoSize] = useState(10) // Percentage
 
   const hasCompanyLogo = Boolean(settings.companyLogo)
 
@@ -50,7 +51,8 @@ export default function WatermarkModal({ imageIds, onClose }) {
           imageId: image.id,
           position: watermarkPosition,
           opacity: watermarkOpacity,
-          logoUrl: settings.companyLogo
+          logoUrl: settings.companyLogo,
+          logoScale: logoSize / 100
         })
 
         // Update status to completed
@@ -137,12 +139,13 @@ export default function WatermarkModal({ imageIds, onClose }) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('watermark.position')}
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: 'bottom-right', label: t('watermark.bottomRight') },
-                      { value: 'bottom-left', label: t('watermark.bottomLeft') },
-                      { value: 'top-right', label: t('watermark.topRight') },
                       { value: 'top-left', label: t('watermark.topLeft') },
+                      { value: 'top-right', label: t('watermark.topRight') },
+                      { value: 'center', label: t('watermark.center') },
+                      { value: 'bottom-left', label: t('watermark.bottomLeft') },
+                      { value: 'bottom-right', label: t('watermark.bottomRight') },
                     ].map((pos) => (
                       <button
                         key={pos.value}
@@ -153,11 +156,35 @@ export default function WatermarkModal({ imageIds, onClose }) {
                             ? 'border-blue-500 bg-blue-50 text-blue-700'
                             : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                           }
+                          ${pos.value === 'center' ? 'col-span-1' : ''}
                         `}
                       >
                         {pos.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Logo Size Slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      {t('watermark.logoSize')}
+                    </label>
+                    <span className="text-sm text-gray-600">{logoSize}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="30"
+                    step="1"
+                    value={logoSize}
+                    onChange={(e) => setLogoSize(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>{t('watermark.small')}</span>
+                    <span>{t('watermark.large')}</span>
                   </div>
                 </div>
 
