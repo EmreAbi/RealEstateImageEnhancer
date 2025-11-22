@@ -217,7 +217,7 @@ export default function ImageModal({ image, onClose }) {
                 /* Regular Image Display */
                 <div className="bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
                   <img
-                    src={image.enhanced_url || image.original_url}
+                    src={image.watermarked_url || image.enhanced_url || image.original_url}
                     alt={image.name}
                     className="max-w-full max-h-full object-contain"
                   />
@@ -541,7 +541,7 @@ export default function ImageModal({ image, onClose }) {
                 </button>
 
                 <a
-                  href={image.enhanced_url || image.original_url}
+                  href={image.watermarked_url || image.enhanced_url || image.original_url}
                   download={image.name}
                   target="_blank"
                   rel="noopener noreferrer"
