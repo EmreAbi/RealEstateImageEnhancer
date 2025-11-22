@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Droplet, Image as ImageIcon, AlertTriangle } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useImages } from '../contexts/ImageContext'
 import { addWatermark } from '../lib/supabase'
+import { generateWatermarkPreview } from '../lib/watermark'
 
 export default function ImageWatermarkPanel({ image, onClose }) {
   const { t } = useLanguage()
@@ -12,10 +13,39 @@ export default function ImageWatermarkPanel({ image, onClose }) {
 
   const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
+  const [logoSize, setLogoSize] = useState(10) // Percentage
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState(null)
 
   const hasCompanyLogo = Boolean(settings.companyLogo)
+
+  // Generate preview when settings change
+  useEffect(() => {
+    if (!hasCompanyLogo || !image) return
+
+    const generatePreview = async () => {
+      setPreviewLoading(true)
+      try {
+        const sourceUrl = image.watermarked_url || image.enhanced_url || image.original_url
+        const preview = await generateWatermarkPreview(sourceUrl, settings.companyLogo, {
+          position: watermarkPosition,
+          opacity: watermarkOpacity,
+          logoScale: logoSize / 100,
+          maxWidth: 400,
+          maxHeight: 300
+        })
+        setPreviewUrl(preview)
+      } catch (err) {
+        console.error('Preview error:', err)
+      } finally {
+        setPreviewLoading(false)
+      }
+    }
+
+    generatePreview()
+  }, [watermarkPosition, watermarkOpacity, logoSize, hasCompanyLogo, settings.companyLogo, image])
 
   const handleAddWatermark = async () => {
     if (!hasCompanyLogo) return
@@ -28,7 +58,8 @@ export default function ImageWatermarkPanel({ image, onClose }) {
         imageId: image.id,
         position: watermarkPosition,
         opacity: watermarkOpacity,
-        logoUrl: settings.companyLogo
+        logoUrl: settings.companyLogo,
+        logoScale: logoSize / 100
       })
 
       // Reload images to get updated watermarked URL
@@ -78,17 +109,44 @@ export default function ImageWatermarkPanel({ image, onClose }) {
         </div>
       </div>
 
+      {/* Real-time Preview */}
+      {previewUrl && (
+        <div className="border-2 border-blue-200 rounded-lg overflow-hidden bg-gray-50">
+          {previewLoading ? (
+            <div className="aspect-[4/3] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <p className="text-sm text-gray-600">{t('watermark.generatingPreview')}</p>
+              </div>
+            </div>
+          ) : (
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full h-auto"
+            />
+          )}
+          <div className="px-3 py-2 bg-blue-50 border-t border-blue-200">
+            <p className="text-xs text-blue-700 font-medium">{t('watermark.preview')}</p>
+          </div>
+        </div>
+      )}
+
       {/* Position Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           {t('watermark.position')}
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
-            { value: 'bottom-right', label: t('watermark.bottomRight') },
-            { value: 'bottom-left', label: t('watermark.bottomLeft') },
-            { value: 'top-right', label: t('watermark.topRight') },
             { value: 'top-left', label: t('watermark.topLeft') },
+            { value: 'top-right', label: t('watermark.topRight') },
+            { value: 'center', label: t('watermark.center') },
+            { value: 'bottom-left', label: t('watermark.bottomLeft') },
+            { value: 'bottom-right', label: t('watermark.bottomRight') },
           ].map((pos) => (
             <button
               key={pos.value}
@@ -100,11 +158,36 @@ export default function ImageWatermarkPanel({ image, onClose }) {
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
                 }
+                ${pos.value === 'center' ? 'col-span-1' : ''}
               `}
             >
               {pos.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Logo Size Slider */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-gray-700">
+            {t('watermark.logoSize')}
+          </label>
+          <span className="text-sm text-gray-600">{logoSize}%</span>
+        </div>
+        <input
+          type="range"
+          min="5"
+          max="30"
+          step="1"
+          value={logoSize}
+          onChange={(e) => setLogoSize(parseInt(e.target.value))}
+          disabled={processing}
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 disabled:opacity-50"
+        />
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>{t('watermark.small')}</span>
+          <span>{t('watermark.large')}</span>
         </div>
       </div>
 
@@ -130,22 +213,6 @@ export default function ImageWatermarkPanel({ image, onClose }) {
           <span>{t('watermark.subtle')}</span>
           <span>{t('watermark.bold')}</span>
         </div>
-      </div>
-
-      {/* Logo Preview */}
-      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <ImageIcon className="w-5 h-5 text-gray-400" />
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">{t('watermark.logoPreview')}</p>
-          <p className="text-xs text-gray-500">{t('watermark.willBeApplied')}</p>
-        </div>
-        {settings.companyLogo && (
-          <img
-            src={settings.companyLogo}
-            alt="Logo"
-            className="w-12 h-12 object-contain"
-          />
-        )}
       </div>
 
       {/* Error Message */}
