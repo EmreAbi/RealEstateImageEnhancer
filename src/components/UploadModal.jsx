@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { X, Upload, FolderOpen, Image as ImageIcon, Check, AlertCircle } from 'lucide-react'
 
 export default function UploadModal({ onClose }) {
+  const { t } = useLanguage()
   const { folders, selectedFolder, uploadImages, images } = useImages()
   const [selectedFolderId, setSelectedFolderId] = useState(
     selectedFolder?.id || (folders.length > 0 ? folders[0].id : null)
@@ -73,8 +75,7 @@ export default function UploadModal({ onClose }) {
     } catch (error) {
       console.error('Upload failed:', error)
       setError(
-        error.message ||
-        'Görseller yüklenirken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.'
+        error.message || t('images.uploadErrorMessage')
       )
       setUploading(false)
     }
@@ -90,8 +91,8 @@ export default function UploadModal({ onClose }) {
               <Upload className="w-6 h-6 text-primary-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Görsel Yükle</h2>
-              <p className="text-sm text-gray-600">Birden fazla görsel yükleyebilirsiniz</p>
+              <h2 className="text-xl font-bold text-gray-900">{t('images.uploadImages')}</h2>
+              <p className="text-sm text-gray-600">{t('images.canUploadMultiple')}</p>
             </div>
           </div>
           <button
@@ -107,12 +108,12 @@ export default function UploadModal({ onClose }) {
           {/* Folder Selection */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Klasör Seçin
+              {t('images.selectFolder')}
             </label>
             {folders.length === 0 ? (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
                 <AlertCircle className="w-5 h-5 inline mr-2" />
-                Henüz klasör oluşturmadınız. Lütfen önce bir klasör oluşturun.
+                {t('images.noFoldersYet')}
               </div>
             ) : (
               <div className="relative">
@@ -124,7 +125,7 @@ export default function UploadModal({ onClose }) {
                 >
                   {folders.map((folder) => (
                     <option key={folder.id} value={folder.id}>
-                      {folder.name} ({getFolderCount(folder.id)} görsel)
+                      {folder.name} ({getFolderCount(folder.id)} {t('images.imagesLabel')})
                     </option>
                   ))}
                 </select>
@@ -164,19 +165,19 @@ export default function UploadModal({ onClose }) {
               </div>
 
               <p className="text-lg font-semibold text-gray-900 mb-2">
-                Görselleri Sürükleyip Bırakın
+                {t('images.dragAndDrop')}
               </p>
               <p className="text-sm text-gray-600 mb-4">
-                veya
+                {t('images.or')}
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="btn-primary"
               >
-                Dosya Seç
+                {t('images.selectFiles')}
               </button>
               <p className="text-xs text-gray-500 mt-4">
-                PNG, JPG, JPEG, WebP (Maks. 10MB)
+                {t('images.maxFileSize')}
               </p>
             </div>
           </div>
@@ -185,7 +186,7 @@ export default function UploadModal({ onClose }) {
           {files.length > 0 && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Seçilen Görseller ({files.length})
+                {t('images.selectedImages', { count: files.length })}
               </h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {files.map((file, index) => (
@@ -221,7 +222,7 @@ export default function UploadModal({ onClose }) {
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-900">Yükleme Hatası</p>
+                <p className="text-sm font-medium text-red-900">{t('images.uploadError')}</p>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
               <button
@@ -241,13 +242,13 @@ export default function UploadModal({ onClose }) {
             className="btn-secondary"
             disabled={uploading}
           >
-            İptal
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleUpload}
             disabled={folders.length === 0 || files.length === 0 || !selectedFolderId || uploading}
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            title={folders.length === 0 ? 'Lütfen önce bir klasör oluşturun' : ''}
+            title={folders.length === 0 ? t('images.createFolderFirst') : ''}
           >
             {uploading ? (
               <>
@@ -267,12 +268,12 @@ export default function UploadModal({ onClose }) {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Yükleniyor...
+                {t('images.uploading')}
               </>
             ) : (
               <>
                 <Check className="w-5 h-5" />
-                Yükle ({files.length})
+                {t('common.upload')} ({files.length})
               </>
             )}
           </button>

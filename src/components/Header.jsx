@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import {
   Menu,
   Upload,
@@ -9,16 +10,19 @@ import {
   ChevronDown,
   Search,
   Bell,
-  Settings
+  Settings,
+  BarChart3
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import BatchProcessModal from './BatchProcessModal'
 
-export default function Header({ onToggleSidebar, onUpload }) {
+export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
+  const { t } = useLanguage()
   const { user, profile, logout } = useAuth()
-  const { selectedImages, enhanceImages, clearSelection } = useImages()
+  const { selectedImages, clearSelection } = useImages()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [enhancing, setEnhancing] = useState(false)
+  const [showBatchModal, setShowBatchModal] = useState(false)
 
   const handleLogout = async () => {
     console.log('🚪 Logout clicked')
@@ -29,17 +33,13 @@ export default function Header({ onToggleSidebar, onUpload }) {
       // No need to navigate - auth state change will handle redirect
     } catch (error) {
       console.error('❌ Logout error:', error)
-      alert('Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.')
+      alert(t('common.logoutError'))
     }
   }
 
-  const handleEnhance = async () => {
+  const handleEnhance = () => {
     if (selectedImages.length === 0) return
-
-    setEnhancing(true)
-    await enhanceImages(selectedImages)
-    setEnhancing(false)
-    clearSelection()
+    setShowBatchModal(true)
   }
 
   return (
@@ -60,7 +60,9 @@ export default function Header({ onToggleSidebar, onUpload }) {
               <Search className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Görsel ara..."
+                placeholder={t('common.searchImages')}
+                value={searchQuery || ''}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
               />
             </div>
@@ -72,12 +74,11 @@ export default function Header({ onToggleSidebar, onUpload }) {
             {selectedImages.length > 0 && (
               <button
                 onClick={handleEnhance}
-                disabled={enhancing}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant disabled:opacity-50"
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant"
               >
-                <Sparkles className={`w-5 h-5 ${enhancing ? 'animate-spin' : ''}`} />
+                <Sparkles className="w-5 h-5" />
                 <span className="hidden sm:inline font-medium">
-                  {enhancing ? 'İşleniyor...' : `${selectedImages.length} Görseli İyileştir`}
+                  {t('common.enhanceImages', { count: selectedImages.length })}
                 </span>
               </button>
             )}
@@ -88,7 +89,7 @@ export default function Header({ onToggleSidebar, onUpload }) {
               className="btn-primary flex items-center gap-2"
             >
               <Upload className="w-5 h-5" />
-              <span className="hidden sm:inline">Yükle</span>
+              <span className="hidden sm:inline">{t('common.upload')}</span>
             </button>
 
             {/* Notifications */}
@@ -150,13 +151,24 @@ export default function Header({ onToggleSidebar, onUpload }) {
                     <div className="p-2">
                       <button
                         onClick={() => {
+                          navigate('/dashboard/analytics')
+                          setShowUserMenu(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      >
+                        <BarChart3 className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('common.statistics')}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
                           navigate('/dashboard/settings')
                           setShowUserMenu(false)
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <Settings className="w-5 h-5" />
-                        <span className="text-sm font-medium">Ayarlar</span>
+                        <span className="text-sm font-medium">{t('common.settings')}</span>
                       </button>
 
                       <button
@@ -164,7 +176,7 @@ export default function Header({ onToggleSidebar, onUpload }) {
                         className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <LogOut className="w-5 h-5" />
-                        <span className="text-sm font-medium">Çıkış Yap</span>
+                        <span className="text-sm font-medium">{t('common.logout')}</span>
                       </button>
                     </div>
                   </div>
@@ -179,11 +191,24 @@ export default function Header({ onToggleSidebar, onUpload }) {
           <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Görsel ara..."
+            placeholder={t('common.searchImages')}
+            value={searchQuery || ''}
+            onChange={(e) => onSearchChange?.(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
           />
         </div>
       </div>
+
+      {/* Batch Process Modal */}
+      {showBatchModal && (
+        <BatchProcessModal
+          imageIds={selectedImages}
+          onClose={() => {
+            setShowBatchModal(false)
+            clearSelection()
+          }}
+        />
+      )}
     </header>
   )
 }

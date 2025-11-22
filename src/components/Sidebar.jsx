@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useImages } from '../contexts/ImageContext'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import {
   Folder,
   FolderPlus,
@@ -31,6 +32,7 @@ export default function Sidebar({ isOpen, onClose }) {
   } = useImages()
 
   const { profile } = useAuth()
+  const { t } = useLanguage()
 
   const [showNewFolderInput, setShowNewFolderInput] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -49,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
         setShowNewFolderInput(false)
       } catch (error) {
         console.error('❌ handleCreateFolder error:', error)
-        alert('Klasör oluşturulurken hata: ' + error.message)
+        alert(t('dashboard.folderCreatedError', { error: error.message }))
       }
     } else {
       console.warn('⚠️ Folder name is empty!')
@@ -58,12 +60,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const handleDeleteFolder = async (e, folderId) => {
     e.stopPropagation()
-    if (confirm('Bu klasörü ve içindeki tüm görselleri silmek istediğinize emin misiniz?')) {
+    if (confirm(t('dashboard.deleteFolderConfirm'))) {
       try {
         await deleteFolder(folderId)
         setFolderMenuOpen(null)
       } catch (error) {
-        alert('Klasör silinirken hata: ' + error.message)
+        alert(t('dashboard.folderDeletedError', { error: error.message }))
       }
     }
   }
@@ -153,12 +155,12 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                Klasörler
+                {t('dashboard.folders')}
               </h3>
               <button
                 onClick={() => setShowNewFolderInput(!showNewFolderInput)}
                 className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Yeni Klasör"
+                title={t('dashboard.newFolder')}
               >
                 <FolderPlus className="w-4 h-4 text-gray-600" />
               </button>
@@ -172,7 +174,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
-                  placeholder="Klasör adı..."
+                  placeholder={t('dashboard.folderName')}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent mb-2"
                   autoFocus
                 />
@@ -181,7 +183,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     onClick={handleCreateFolder}
                     className="flex-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                   >
-                    Oluştur
+                    {t('dashboard.create')}
                   </button>
                   <button
                     onClick={() => {
@@ -190,7 +192,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     }}
                     className="flex-1 px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                   >
-                    İptal
+                    {t('common.cancel')}
                   </button>
                 </div>
               </div>
@@ -205,7 +207,7 @@ export default function Sidebar({ isOpen, onClose }) {
               `}
             >
               <ImageIcon className="w-5 h-5" />
-              <span className="flex-1 text-left font-medium">Tüm Görseller</span>
+              <span className="flex-1 text-left font-medium">{t('dashboard.allImages')}</span>
               <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-600 rounded-full">
                 {images.length}
               </span>
@@ -252,7 +254,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Sil
+                        {t('common.delete')}
                       </button>
                     </div>
                   )}

@@ -5,12 +5,12 @@ import Header from '../components/Header'
 import ImageGallery from '../components/ImageGallery'
 import UploadModal from '../components/UploadModal'
 import Settings from './Settings'
-import { useImages } from '../contexts/ImageContext'
+import Analytics from './Analytics'
 
 export default function Dashboard() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const { selectedFolder } = useImages()
+  const [searchQuery, setSearchQuery] = useState('')
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -23,12 +23,15 @@ export default function Dashboard() {
         <Header
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           onUpload={() => setShowUploadModal(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto">
           <Routes>
-            <Route index element={<ImageGallery />} />
+            <Route index element={<ImageGallery searchQuery={searchQuery} />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

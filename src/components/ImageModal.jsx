@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw } from 'lucide-react'
+import { X, Download, Sparkles, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2 } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
+import ShareModal from './ShareModal'
 
 export default function ImageModal({ image, onClose }) {
+  const { t } = useLanguage()
   const { enhanceImages } = useImages()
   const { settings } = useSettings()
   const [sliderPosition, setSliderPosition] = useState(50)
@@ -12,6 +15,7 @@ export default function ImageModal({ image, onClose }) {
   const [aiModels, setAiModels] = useState([])
   const [selectedModel, setSelectedModel] = useState(null)
   const [showModelSelect, setShowModelSelect] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   useEffect(() => {
     fetchAiModels()
@@ -88,31 +92,31 @@ export default function ImageModal({ image, onClose }) {
     switch (status) {
       case 'original':
         return {
-          text: 'Orijinal',
+          text: t('images.original'),
           color: 'text-gray-600',
           bgColor: 'bg-gray-100'
         }
       case 'processing':
         return {
-          text: 'İşleniyor',
+          text: t('images.processing'),
           color: 'text-yellow-700',
           bgColor: 'bg-yellow-100'
         }
       case 'enhanced':
         return {
-          text: 'İyileştirildi',
+          text: t('images.enhanced'),
           color: 'text-green-700',
           bgColor: 'bg-green-100'
         }
       case 'failed':
         return {
-          text: 'Hata',
+          text: t('images.failed'),
           color: 'text-red-700',
           bgColor: 'bg-red-100'
         }
       default:
         return {
-          text: 'Bilinmiyor',
+          text: t('images.status'),
           color: 'text-gray-600',
           bgColor: 'bg-gray-100'
         }
@@ -201,10 +205,10 @@ export default function ImageModal({ image, onClose }) {
 
                   {/* Labels */}
                   <div className="absolute top-4 left-4 px-3 py-1.5 bg-black bg-opacity-70 text-white text-sm font-medium rounded-lg pointer-events-none">
-                    Orijinal
+                    {t('images.original')}
                   </div>
                   <div className="absolute top-4 right-4 px-3 py-1.5 bg-black bg-opacity-70 text-white text-sm font-medium rounded-lg pointer-events-none">
-                    İyileştirilmiş
+                    {t('images.enhanced')}
                   </div>
                 </div>
               ) : (
@@ -224,7 +228,7 @@ export default function ImageModal({ image, onClose }) {
               {/* Status */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                  Durum
+                  {t('images.status')}
                 </h3>
                 <span className={`inline-flex items-center gap-2 px-4 py-2 ${statusInfo.bgColor} ${statusInfo.color} text-sm font-medium rounded-lg`}>
                   {image.status === 'processing' && (
@@ -243,13 +247,13 @@ export default function ImageModal({ image, onClose }) {
               {/* Information */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                  Bilgiler
+                  {t('images.information')}
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-500">Yüklenme Tarihi</p>
+                      <p className="text-xs text-gray-500">{t('images.uploadDate')}</p>
                       <p className="text-sm font-medium text-gray-900">
                         {new Date(image.created_at).toLocaleDateString('tr-TR', {
                           year: 'numeric',
@@ -263,7 +267,7 @@ export default function ImageModal({ image, onClose }) {
                   <div className="flex items-start gap-3">
                     <HardDrive className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-500">Dosya Boyutu</p>
+                      <p className="text-xs text-gray-500">{t('images.fileSize')}</p>
                       <p className="text-sm font-medium text-gray-900">
                         {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
                       </p>
@@ -273,7 +277,7 @@ export default function ImageModal({ image, onClose }) {
                   <div className="flex items-start gap-3">
                     <Maximize2 className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-gray-500">Dosya Adı</p>
+                      <p className="text-xs text-gray-500">{t('images.fileName')}</p>
                       <p className="text-sm font-medium text-gray-900 break-all">
                         {image.name}
                       </p>
@@ -285,7 +289,7 @@ export default function ImageModal({ image, onClose }) {
                     <div className="flex items-start gap-3">
                       <Sparkles className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-500">İyileştirme Modeli</p>
+                        <p className="text-xs text-gray-500">{t('images.enhancementModel')}</p>
                         <p className="text-sm font-medium text-gray-900">
                           {image.metadata.enhancement.model.includes('openai') || image.metadata.enhancement.model.includes('gpt-image') 
                             ? '🤖 OpenAI GPT-Image-1' 
@@ -316,7 +320,7 @@ export default function ImageModal({ image, onClose }) {
                     {/* AI Model Selector - Dropdown */}
                     {aiModels.length > 1 && (
                       <div className="space-y-2 model-selector-dropdown">
-                        <label className="text-xs font-medium text-gray-700">AI Modeli Seçin</label>
+                        <label className="text-xs font-medium text-gray-700">{t('images.selectModel')}</label>
                         <div className="relative">
                           <button
                             onClick={() => setShowModelSelect(!showModelSelect)}
@@ -324,10 +328,10 @@ export default function ImageModal({ image, onClose }) {
                           >
                             <div className="flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-primary-600" />
-                              <div>
-                                <div className="font-semibold text-gray-900 text-sm">
-                                  {selectedModel?.display_name || 'Model Seçin'}
-                                </div>
+                            <div>
+                              <div className="font-semibold text-gray-900 text-sm">
+                                {selectedModel?.display_name || t('images.selectModel')}
+                              </div>
                                 <div className="text-xs text-gray-500">
                                   {selectedModel?.provider === 'openai' ? '🤖 OpenAI' : selectedModel?.provider === 'fal-ai' ? '🎨 FAL.AI' : ''}
                                 </div>
@@ -388,7 +392,7 @@ export default function ImageModal({ image, onClose }) {
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Sparkles className="w-5 h-5" />
-                      {image.status === 'enhanced' ? 'Tekrar İyileştir' : 'İyileştir'}
+                      {image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance')}
                     </button>
                   </>
                 )}
@@ -399,7 +403,7 @@ export default function ImageModal({ image, onClose }) {
                     className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-medium cursor-not-allowed"
                   >
                     <Sparkles className="w-5 h-5 animate-spin" />
-                    İşleniyor...
+                    {t('images.processing')}
                   </button>
                 )}
 
@@ -407,10 +411,10 @@ export default function ImageModal({ image, onClose }) {
                   <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2 text-green-700 mb-2">
                       <Sparkles className="w-5 h-5" />
-                      <span className="font-semibold">İyileştirildi</span>
+                      <span className="font-semibold">{t('images.successfullyEnhanced')}</span>
                     </div>
                     <p className="text-sm text-green-600">
-                      Bu görsel başarıyla AI ile iyileştirildi.
+                      {t('images.enhancedSuccessfully')}
                     </p>
                   </div>
                 )}
@@ -420,17 +424,17 @@ export default function ImageModal({ image, onClose }) {
                     <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                       <div className="flex items-center gap-2 text-red-700 mb-2">
                         <AlertTriangle className="w-5 h-5" />
-                        <span className="font-semibold">İşlem başarısız</span>
+                        <span className="font-semibold">{t('images.processingFailed')}</span>
                       </div>
                       <p className="text-sm text-red-600">
-                        İyileştirme işlemi başarısız oldu. Farklı bir model deneyebilir veya tekrar deneyebilirsiniz.
+                        {t('images.processingFailedMessage')}
                       </p>
                     </div>
 
                     {/* AI Model Selector - Dropdown for retry */}
                     {aiModels.length > 1 && (
                       <div className="space-y-2 model-selector-dropdown">
-                        <label className="text-xs font-medium text-gray-700">Farklı Model Dene</label>
+                        <label className="text-xs font-medium text-gray-700">{t('images.tryDifferentModel')}</label>
                         <div className="relative">
                           <button
                             onClick={() => setShowModelSelect(!showModelSelect)}
@@ -502,37 +506,52 @@ export default function ImageModal({ image, onClose }) {
                       className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <RotateCcw className="w-5 h-5" />
-                      {selectedModel ? `${selectedModel.display_name} ile Tekrar Dene` : 'Tekrar Dene'}
+                      {selectedModel ? t('images.retryWith', { model: selectedModel.display_name }) : t('images.retry')}
                     </button>
                   </div>
                 )}
+
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="w-full flex items-center justify-center gap-2 btn-secondary"
+                >
+                  <Share2 className="w-5 h-5" />
+                  {t('images.share')}
+                </button>
 
                 <a
                   href={image.enhanced_url || image.original_url}
                   download={image.name}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 btn-secondary"
+                  className="w-full flex items-center justify-center gap-2 btn-primary"
                 >
                   <Download className="w-5 h-5" />
-                  İndir
+                  {t('common.download')}
                 </a>
               </div>
 
               {/* Tips */}
               <div className="p-4 bg-primary-50 border border-primary-100 rounded-lg">
                 <h4 className="text-sm font-semibold text-primary-900 mb-2">
-                  💡 İpucu
+                  {t('images.tip')}
                 </h4>
                 <p className="text-xs text-primary-700">
-                  AI iyileştirme özelliği görsellerinizin kalitesini artırır,
-                  detayları netleştirir ve profesyonel bir görünüm kazandırır.
+                  {t('images.aiTip')}
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          image={image}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   )
 }
