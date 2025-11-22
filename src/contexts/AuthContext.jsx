@@ -19,10 +19,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     console.log('🔐 AuthContext initializing...')
     let mounted = true
+    let sessionLoaded = false
 
     // Helper to handle session updates
     const handleSession = async (session) => {
       if (!mounted) return
+
+      sessionLoaded = true // Mark that we got a session response
 
       if (session?.user) {
         console.log('✅ User found:', session.user.id)
@@ -41,7 +44,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null)
         setProfile(null)
       }
-      
+
       if (mounted) {
         setLoading(false)
       }
@@ -56,7 +59,10 @@ export const AuthProvider = ({ children }) => {
       handleSession(session)
     }).catch(err => {
       console.error('❌ getSession failed:', err)
-      if (mounted) setLoading(false)
+      if (mounted) {
+        sessionLoaded = true
+        setLoading(false)
+      }
     })
 
     // 2. Listen for auth changes
@@ -65,16 +71,13 @@ export const AuthProvider = ({ children }) => {
       handleSession(session)
     })
 
-    // 3. Safety timeout to prevent infinite loading
+    // 3. Safety timeout - only trigger if we haven't received any session response
     const timeoutId = setTimeout(() => {
-      if (mounted) {
+      if (mounted && !sessionLoaded) {
         console.warn('⚠️ Auth check timed out - forcing completion')
-        setLoading(prev => {
-          if (prev) return false
-          return prev
-        })
+        setLoading(false)
       }
-    }, 10000) // Increased from 5s to 10s for slower connections
+    }, 10000)
 
     return () => {
       mounted = false
