@@ -26,6 +26,14 @@ export default function BatchProcessModal({ imageIds, onClose }) {
 
   const hasCompanyLogo = Boolean(settings.companyLogo)
 
+  console.log('🎨 Watermark Debug:', {
+    hasCompanyLogo,
+    companyLogo: settings.companyLogo,
+    addWatermarkEnabled,
+    processing,
+    completedCount
+  })
+
   const selectedImages = images.filter(img => imageIds.includes(img.id))
   const totalImages = selectedImages.length
 
