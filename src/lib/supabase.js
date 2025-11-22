@@ -529,3 +529,88 @@ export const toggleShareLink = async (linkId, isActive) => {
   if (error) throw error
   return data
 }
+
+/**
+ * Credit System Functions
+ */
+
+/**
+ * Get user's current credit balance
+ */
+export const getUserCredits = async (userId) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('credits_remaining')
+    .eq('id', userId)
+    .single()
+
+  if (error) throw error
+  return data?.credits_remaining || 0
+}
+
+/**
+ * Check if user has enough credits
+ */
+export const hasEnoughCredits = async (userId, requiredCredits = 1.0) => {
+  const balance = await getUserCredits(userId)
+  return balance >= requiredCredits
+}
+
+/**
+ * Deduct credits from user balance
+ * Returns true if successful, false if insufficient credits
+ */
+export const deductCredits = async (userId, amount = 1.0) => {
+  const { data, error } = await supabase.rpc('deduct_user_credits', {
+    p_user_id: userId,
+    p_amount: amount
+  })
+
+  if (error) {
+    console.error('Error deducting credits:', error)
+    throw error
+  }
+
+  return data // Returns boolean from the database function
+}
+
+/**
+ * Refund credits to user balance (used when enhancement fails)
+ */
+export const refundCredits = async (userId, amount = 1.0) => {
+  const { error } = await supabase.rpc('refund_user_credits', {
+    p_user_id: userId,
+    p_amount: amount
+  })
+
+  if (error) {
+    console.error('Error refunding credits:', error)
+    throw error
+  }
+}
+
+/**
+ * Get user's credit usage history
+ */
+export const getCreditHistory = async (userId, limit = 100) => {
+  const { data, error } = await supabase
+    .from('enhancement_logs')
+    .select(`
+      *,
+      images (
+        name,
+        original_url
+      ),
+      ai_models (
+        display_name,
+        provider
+      )
+    `)
+    .eq('user_id', userId)
+    .not('cost_credits', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data
+}

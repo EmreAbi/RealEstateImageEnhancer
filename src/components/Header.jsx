@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useImages } from '../contexts/ImageContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useNotifications } from '../contexts/NotificationContext'
 import {
   Menu,
   Upload,
@@ -11,18 +12,23 @@ import {
   Search,
   Bell,
   Settings,
-  BarChart3
+  BarChart3,
+  Globe
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import BatchProcessModal from './BatchProcessModal'
+import NotificationPanel from './NotificationPanel'
 
 export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
-  const { t } = useLanguage()
+  const { t, language, setLanguage, availableLanguages } = useLanguage()
   const { user, profile, logout } = useAuth()
   const { selectedImages, clearSelection } = useImages()
+  const { unreadCount } = useNotifications()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showBatchModal, setShowBatchModal] = useState(false)
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
 
   const handleLogout = async () => {
     console.log('🚪 Logout clicked')
@@ -92,11 +98,68 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
               <span className="hidden sm:inline">{t('common.upload')}</span>
             </button>
 
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title={t('settings.language')}
+              >
+                <Globe className="w-5 h-5 text-gray-600" />
+              </button>
+
+              {showLangMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowLangMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-elegant z-20 min-w-[180px] overflow-hidden">
+                    {availableLanguages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setLanguage(lang.code)
+                          setShowLangMenu(false)
+                        }}
+                        className={`
+                          w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
+                          ${language === lang.code
+                            ? 'bg-primary-50 text-primary-700'
+                            : 'text-gray-700 hover:bg-gray-50'
+                          }
+                        `}
+                      >
+                        <span className="text-lg">{lang.flag}</span>
+                        <span className="text-sm font-medium">{lang.name}</span>
+                        {language === lang.code && (
+                          <div className="ml-auto w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Notifications */}
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Bell className="w-5 h-5 text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-xs font-semibold rounded-full flex items-center justify-center px-1">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <NotificationPanel onClose={() => setShowNotifications(false)} />
+              )}
+            </div>
 
             {/* Settings */}
             <button

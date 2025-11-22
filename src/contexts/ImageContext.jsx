@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 import { useSettings } from './SettingsContext'
+import { useNotifications } from './NotificationContext'
 import {
   getFolders,
   createFolder as createFolderDB,
@@ -28,6 +29,7 @@ export const useImages = () => {
 export const ImageProvider = ({ children }) => {
   const { user, loading: authLoading } = useAuth()
   const { settings } = useSettings()
+  const { notifySuccess, notifyError, notifyInfo } = useNotifications()
   const [folders, setFolders] = useState([])
   const [images, setImages] = useState([])
   const [aiModels, setAiModels] = useState([])
@@ -213,6 +215,21 @@ export const ImageProvider = ({ children }) => {
       const newImages = await Promise.all(uploadPromises)
       console.log('✅ All images uploaded:', newImages.length)
 
+      // Send success notification
+      if (newImages.length === 1) {
+        notifySuccess(
+          'notifications.imageUploaded',
+          'notifications.imageUploadedMessage',
+          { imageName: newImages[0].file_name }
+        )
+      } else {
+        notifySuccess(
+          'notifications.imagesUploaded',
+          'notifications.imagesUploadedMessage',
+          { count: newImages.length }
+        )
+      }
+
       // Refresh all data to ensure UI is up to date
       console.log('🔄 Refreshing all data after upload...')
       await loadData()
@@ -303,6 +320,17 @@ export const ImageProvider = ({ children }) => {
             setImages(prevImages =>
               prevImages.map(img => (img.id === imageId ? { ...img, ...result.image } : img))
             )
+
+            // Send success notification
+            const imageName = images.find(img => img.id === imageId)?.file_name || 'Image'
+            notifySuccess(
+              'notifications.imageEnhanced',
+              'notifications.imageEnhancedMessage',
+              {
+                imageId,
+                imageName,
+              }
+            )
           }
         } catch (enhanceError) {
           console.error('❌ Error enhancing image:', imageId, enhanceError)
@@ -310,6 +338,17 @@ export const ImageProvider = ({ children }) => {
             prevImages.map(img =>
               img.id === imageId ? { ...img, status: 'failed' } : img
             )
+          )
+
+          // Send error notification
+          const imageName = images.find(img => img.id === imageId)?.file_name || 'Image'
+          notifyError(
+            'notifications.imageEnhanceFailed',
+            'notifications.imageEnhanceFailedMessage',
+            {
+              imageId,
+              imageName,
+            }
           )
           throw enhanceError
         }

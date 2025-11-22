@@ -166,6 +166,41 @@ serve(async (req: Request) => {
     return errorResponse(401, "Unauthorized", { authError })
   }
 
+  // CHECK USER CREDITS
+  const { data: profileData, error: profileError } = await serverClient
+    .from("profiles")
+    .select("credits_remaining")
+    .eq("id", user.id)
+    .single()
+
+  if (profileError) {
+    return errorResponse(500, "Failed to check user credits", { profileError })
+  }
+
+  const creditsRequired = 1.0 // Each enhancement costs 1 credit
+  const currentBalance = profileData?.credits_remaining || 0
+
+  if (currentBalance < creditsRequired) {
+    return errorResponse(402, "Insufficient credits", {
+      required: creditsRequired,
+      available: currentBalance,
+      message: "You don't have enough credits to enhance this image. Each enhancement costs 1 credit."
+    })
+  }
+
+  // DEDUCT CREDITS
+  const { data: deductResult, error: deductError } = await serverClient
+    .rpc("deduct_user_credits", {
+      p_user_id: user.id,
+      p_amount: creditsRequired
+    })
+
+  if (deductError || !deductResult) {
+    return errorResponse(500, "Failed to deduct credits", { deductError })
+  }
+
+  console.log(`✅ Credits deducted: ${creditsRequired} (remaining: ${currentBalance - creditsRequired})`)
+
   const enhancementStartMs = nowMs()
 
   const {
@@ -542,6 +577,17 @@ serve(async (req: Request) => {
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
 
+    // REFUND CREDITS on failure
+    try {
+      await serverClient.rpc("refund_user_credits", {
+        p_user_id: user.id,
+        p_amount: creditsRequired
+      })
+      console.log(`💰 Credits refunded: ${creditsRequired}`)
+    } catch (refundError) {
+      console.error("⚠️ Failed to refund credits:", refundError)
+    }
+
     await serverClient
       .from("images")
       .update({ status: "failed" })
@@ -552,7 +598,8 @@ serve(async (req: Request) => {
       .update({
         status: "failed",
         completed_at: new Date().toISOString(),
-        error_message: errorMessage
+        error_message: errorMessage,
+        cost_credits: 0.0 // No cost since it failed and was refunded
       })
       .eq("id", enhancementLog.id)
 
