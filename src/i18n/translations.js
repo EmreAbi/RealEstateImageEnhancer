@@ -303,6 +303,9 @@ export const translations = {
     watermark: {
       addWatermark: 'Add Company Watermark',
       noLogo: 'Upload logo in Settings first',
+      uploadLogoFirst: 'Please upload your company logo in Settings to use this feature',
+      oneImageSelected: '1 image selected',
+      imagesSelected: '{count} images selected',
       position: 'Position',
       bottomRight: 'Bottom Right',
       bottomLeft: 'Bottom Left',
@@ -621,6 +624,9 @@ export const translations = {
     watermark: {
       addWatermark: 'Firma Filigranı Ekle',
       noLogo: 'Önce Ayarlar\'dan logo yükleyin',
+      uploadLogoFirst: 'Bu özelliği kullanmak için lütfen Ayarlar\'dan firma logonuzu yükleyin',
+      oneImageSelected: '1 görsel seçildi',
+      imagesSelected: '{count} görsel seçildi',
       position: 'Konum',
       bottomRight: 'Sağ Alt',
       bottomLeft: 'Sol Alt',
@@ -939,6 +945,9 @@ export const translations = {
     watermark: {
       addWatermark: 'Firmenwasserzeichen hinzufügen',
       noLogo: 'Laden Sie zuerst ein Logo in den Einstellungen hoch',
+      uploadLogoFirst: 'Bitte laden Sie Ihr Firmenlogo in den Einstellungen hoch, um diese Funktion zu nutzen',
+      oneImageSelected: '1 Bild ausgewählt',
+      imagesSelected: '{count} Bilder ausgewählt',
       position: 'Position',
       bottomRight: 'Unten Rechts',
       bottomLeft: 'Unten Links',
@@ -1257,6 +1266,9 @@ export const translations = {
     watermark: {
       addWatermark: 'Ajouter un filigrane d\'entreprise',
       noLogo: 'Téléchargez d\'abord un logo dans les Paramètres',
+      uploadLogoFirst: 'Veuillez télécharger le logo de votre entreprise dans les Paramètres pour utiliser cette fonctionnalité',
+      oneImageSelected: '1 image sélectionnée',
+      imagesSelected: '{count} images sélectionnées',
       position: 'Position',
       bottomRight: 'En bas à droite',
       bottomLeft: 'En bas à gauche',
