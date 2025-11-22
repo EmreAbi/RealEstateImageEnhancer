@@ -226,8 +226,6 @@ export const getUserImages = async (userId, retries = 3) => {
     console.log(`🔄 Attempt ${attempt}/${retries}...`)
 
     try {
-      // Session is already validated in AuthContext - no need to check again
-      // The Supabase client will automatically use the persisted session
       let timeoutId
       let didTimeout = false
 
@@ -236,7 +234,7 @@ export const getUserImages = async (userId, retries = 3) => {
           didTimeout = true
           console.warn('⏰ Query timeout triggered!')
           reject(new Error('Request timeout'))
-        }, 15000) // 15s timeout
+        }, 10000) // Reduced to 10s timeout
       })
 
       const queryPromise = (async () => {
@@ -245,22 +243,53 @@ export const getUserImages = async (userId, retries = 3) => {
         console.log('👤 Query userId:', userId)
 
         try {
-          console.log('⏳ Building query...')
-          const query = supabase
-            .from('images')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
+          // Try using fetch directly as a workaround for hanging client
+          console.log('🌐 Attempting direct REST API call...')
 
-          console.log('📤 Executing query...')
-          const result = await query
+          // Get token from localStorage directly to avoid hanging getSession() call
+          const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+          console.log('🔑 Looking for token in localStorage with key:', storageKey)
 
+          const authData = localStorage.getItem(storageKey)
+          if (!authData) {
+            console.error('❌ No auth data in localStorage')
+            throw new Error('No auth data')
+          }
+
+          const { access_token } = JSON.parse(authData)
+          if (!access_token) {
+            console.error('❌ No access token in stored data')
+            throw new Error('No access token')
+          }
+
+          console.log('✅ Access token retrieved from localStorage, making fetch request...')
+
+          const fetchUrl = `${supabaseUrl}/rest/v1/images?user_id=eq.${userId}&order=created_at.desc&select=*`
+          console.log('📡 Fetch URL:', fetchUrl)
+
+          const response = await fetch(fetchUrl, {
+            method: 'GET',
+            headers: {
+              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${access_token}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            }
+          })
+
+          console.log('📥 Fetch response received, status:', response.status)
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('❌ Fetch failed:', response.status, errorText)
+            throw new Error(`HTTP ${response.status}: ${errorText}`)
+          }
+
+          const data = await response.json()
           console.log('✨ Query completed!')
-          console.log('📊 Result status:', result.status)
-          console.log('📊 Result data length:', result.data?.length)
-          console.log('📊 Result error:', result.error)
+          console.log('📊 Result data length:', data?.length)
 
-          return result
+          return { data, error: null }
         } catch (queryError) {
           console.error('💥 Query threw error:', queryError)
           throw queryError
