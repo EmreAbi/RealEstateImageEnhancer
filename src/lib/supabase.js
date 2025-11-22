@@ -226,26 +226,65 @@ export const getUserImages = async (userId, retries = 3) => {
     console.log(`🔄 Attempt ${attempt}/${retries}...`)
 
     try {
+      // Check if we have a valid session first
+      console.log('🔐 Checking current session...')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError)
+        throw new Error('No valid session')
+      }
+
+      if (!session) {
+        console.warn('⚠️ No active session found')
+        throw new Error('No active session')
+      }
+
+      console.log('✅ Session valid, token exists:', !!session.access_token)
+
       let timeoutId
       let didTimeout = false
 
       const timeoutPromise = new Promise((_, reject) => {
         timeoutId = setTimeout(() => {
           didTimeout = true
+          console.warn('⏰ Query timeout triggered!')
           reject(new Error('Request timeout'))
         }, 15000) // 15s timeout
       })
 
       const queryPromise = (async () => {
-        const result = await supabase
-          .from('images')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-        return result
+        console.log('🔍 Starting Supabase query...')
+        console.log('📡 Supabase URL:', supabaseUrl)
+        console.log('👤 Query userId:', userId)
+
+        try {
+          console.log('⏳ Building query...')
+          const query = supabase
+            .from('images')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+
+          console.log('📤 Executing query...')
+          const result = await query
+
+          console.log('✨ Query completed!')
+          console.log('📊 Result status:', result.status)
+          console.log('📊 Result data length:', result.data?.length)
+          console.log('📊 Result error:', result.error)
+
+          return result
+        } catch (queryError) {
+          console.error('💥 Query threw error:', queryError)
+          throw queryError
+        }
       })()
 
+      console.log('🏁 Starting Promise.race...')
       const result = await Promise.race([queryPromise, timeoutPromise])
+      console.log('🏁 Promise.race completed')
+
       clearTimeout(timeoutId)
 
       if (didTimeout) {
@@ -257,6 +296,7 @@ export const getUserImages = async (userId, retries = 3) => {
       if (error) {
         console.error(`❌ getUserImages error (attempt ${attempt}/${retries}):`, error)
         console.error('Error code:', error.code)
+        console.error('Error message:', error.message)
         console.error('Error details:', error.details)
 
         if (attempt === retries) {
@@ -270,11 +310,11 @@ export const getUserImages = async (userId, retries = 3) => {
       }
 
       console.log('✅ getUserImages returned:', data?.length, 'images')
-      console.log('📊 Raw data:', data)
 
       return data
     } catch (err) {
       console.error(`❌ getUserImages attempt ${attempt}/${retries} failed:`, err.message)
+      console.error('Error stack:', err.stack)
 
       if (attempt === retries) {
         console.error('❌ All retries exhausted. Giving up.')
