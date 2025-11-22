@@ -135,14 +135,45 @@ export const deleteImageFromStorage = async (filePath) => {
  * Get all folders for a user
  */
 export const getFolders = async (userId) => {
-  const { data, error } = await supabase
-    .from('folders')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  console.log('📁 getFolders called for userId:', userId)
 
-  if (error) throw error
-  return data
+  try {
+    // Get token from localStorage directly
+    const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+    const authData = localStorage.getItem(storageKey)
+
+    if (!authData) {
+      console.error('❌ No auth data in localStorage')
+      throw new Error('No auth data')
+    }
+
+    const { access_token } = JSON.parse(authData)
+
+    const fetchUrl = `${supabaseUrl}/rest/v1/folders?user_id=eq.${userId}&order=created_at.desc&select=*`
+
+    const response = await fetch(fetchUrl, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ getFolders fetch failed:', response.status, errorText)
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('✅ getFolders returned:', data?.length, 'folders')
+    return data
+  } catch (error) {
+    console.error('❌ getFolders error:', error)
+    throw error
+  }
 }
 
 /**
@@ -399,14 +430,45 @@ export const deleteImageRecord = async (imageId) => {
  * Get all active AI models
  */
 export const getAIModels = async () => {
-  const { data, error } = await supabase
-    .from('ai_models')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: true })
+  console.log('🤖 getAIModels called')
 
-  if (error) throw error
-  return data
+  try {
+    // Get token from localStorage directly
+    const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+    const authData = localStorage.getItem(storageKey)
+
+    if (!authData) {
+      console.error('❌ No auth data in localStorage')
+      throw new Error('No auth data')
+    }
+
+    const { access_token } = JSON.parse(authData)
+
+    const fetchUrl = `${supabaseUrl}/rest/v1/ai_models?is_active=eq.true&order=created_at.asc&select=*`
+
+    const response = await fetch(fetchUrl, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ getAIModels fetch failed:', response.status, errorText)
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log('✅ getAIModels returned:', data?.length, 'models')
+    return data
+  } catch (error) {
+    console.error('❌ getAIModels error:', error)
+    throw error
+  }
 }
 
 /**
