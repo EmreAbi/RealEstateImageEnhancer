@@ -6,13 +6,11 @@ import ImageGallery from '../components/ImageGallery'
 import UploadModal from '../components/UploadModal'
 import Settings from './Settings'
 import Analytics from './Analytics'
-import { useImages } from '../contexts/ImageContext'
 
 export default function Dashboard() {
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const { selectedFolder } = useImages()
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">

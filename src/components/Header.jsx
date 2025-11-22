@@ -17,7 +17,7 @@ import BatchProcessModal from './BatchProcessModal'
 
 export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
   const { user, profile, logout } = useAuth()
-  const { selectedImages, enhanceImages, clearSelection } = useImages()
+  const { selectedImages, clearSelection } = useImages()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showBatchModal, setShowBatchModal] = useState(false)
