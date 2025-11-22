@@ -1,24 +1,58 @@
 import { useState, useEffect } from 'react'
 import { X, Sparkles, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function BatchProcessModal({ imageIds, onClose }) {
   const { images, enhanceImages, aiModels, selectedAIModel } = useImages()
-  const [processing, setProcessing] = useState(false)
-  const [progress, setProgress] = useState([])
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [selectedModel, setSelectedModel] = useState(selectedAIModel)
+  const { t } = useLanguage()
+  
+  // Load from localStorage if available
+  const savedState = localStorage.getItem('batchProcessState')
+  const initialState = savedState ? JSON.parse(savedState) : null
+  
+  const [processing, setProcessing] = useState(initialState?.processing || false)
+  const [progress, setProgress] = useState(initialState?.progress || [])
+  const [currentIndex, setCurrentIndex] = useState(initialState?.currentIndex || 0)
+  const [selectedModel, setSelectedModel] = useState(initialState?.selectedModel || selectedAIModel)
 
   const selectedImages = images.filter(img => imageIds.includes(img.id))
   const totalImages = selectedImages.length
 
+  // Save state to localStorage whenever it changes
   useEffect(() => {
-    // Initialize progress array
-    setProgress(selectedImages.map(img => ({
-      id: img.id,
-      name: img.name,
-      status: 'pending' // pending, processing, completed, failed
-    })))
+    if (processing || progress.length > 0) {
+      const state = {
+        processing,
+        progress,
+        currentIndex,
+        selectedModel,
+        imageIds
+      }
+      localStorage.setItem('batchProcessState', JSON.stringify(state))
+    }
+  }, [processing, progress, currentIndex, selectedModel, imageIds])
+
+  // Clear localStorage when modal closes and all done
+  useEffect(() => {
+    return () => {
+      const completedCount = progress.filter(p => p.status === 'completed').length
+      const failedCount = progress.filter(p => p.status === 'failed').length
+      if (!processing && (completedCount + failedCount) === totalImages) {
+        localStorage.removeItem('batchProcessState')
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Initialize progress array only if not loaded from localStorage
+    if (progress.length === 0) {
+      setProgress(selectedImages.map(img => ({
+        id: img.id,
+        name: img.name,
+        status: 'pending' // pending, processing, completed, failed
+      })))
+    }
   }, [])
 
   const handleStartProcessing = async () => {
@@ -76,7 +110,7 @@ export default function BatchProcessModal({ imageIds, onClose }) {
   const allCompleted = processing === false && (completedCount + failedCount) === totalImages
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -85,8 +119,8 @@ export default function BatchProcessModal({ imageIds, onClose }) {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Toplu AI İyileştirme</h2>
-              <p className="text-sm text-gray-600">{totalImages} görsel işlenecek</p>
+              <h2 className="text-xl font-bold text-gray-900">{t('batch.title')}</h2>
+              <p className="text-sm text-gray-600">{t('batch.imagesWillBeProcessed', { count: totalImages })}</p>
             </div>
           </div>
           {!processing && (
@@ -103,7 +137,7 @@ export default function BatchProcessModal({ imageIds, onClose }) {
         {!processing && completedCount === 0 && (
           <div className="p-6 border-b border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              AI Modeli Seçin
+              {t('common.aiModel')}
             </label>
             <div className="grid grid-cols-1 gap-3">
               {aiModels.map((model) => (
@@ -142,10 +176,10 @@ export default function BatchProcessModal({ imageIds, onClose }) {
           <div className="p-6 border-b border-gray-200">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-700">
-                {processing ? 'İşleniyor...' : 'Tamamlandı'}
+                {processing ? t('batch.processing') : t('batch.allDone')}
               </span>
               <span className="text-gray-600">
-                {completedCount} / {totalImages} ({progressPercentage}%)
+                {completedCount} {t('batch.of')} {totalImages} ({progressPercentage}%)
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -157,7 +191,7 @@ export default function BatchProcessModal({ imageIds, onClose }) {
             {failedCount > 0 && (
               <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
                 <AlertTriangle className="w-4 h-4" />
-                <span>{failedCount} görsel işlenemedi</span>
+                <span>{t('batch.failedCount', { count: failedCount })}</span>
               </div>
             )}
           </div>
@@ -184,10 +218,10 @@ export default function BatchProcessModal({ imageIds, onClose }) {
                 <div className="flex items-center gap-2">
                   {getStatusIcon(item.status)}
                   <span className="text-xs font-medium text-gray-600">
-                    {item.status === 'pending' ? 'Bekliyor' :
-                     item.status === 'processing' ? 'İşleniyor' :
-                     item.status === 'completed' ? 'Tamamlandı' :
-                     'Başarısız'}
+                    {item.status === 'pending' ? t('batch.pending') :
+                     item.status === 'processing' ? t('batch.processing') :
+                     item.status === 'completed' ? t('batch.completed') :
+                     t('batch.failed')}
                   </span>
                 </div>
               </div>
@@ -202,13 +236,13 @@ export default function BatchProcessModal({ imageIds, onClose }) {
               {processing && (
                 <span className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  Lütfen bekleyin, görseller işleniyor...
+                  {t('batch.processingComplete')}
                 </span>
               )}
               {allCompleted && (
                 <span className="flex items-center gap-2 text-green-600">
                   <CheckCircle className="w-4 h-4" />
-                  İşlem tamamlandı!
+                  {t('batch.allDone')}
                 </span>
               )}
             </div>
@@ -219,14 +253,14 @@ export default function BatchProcessModal({ imageIds, onClose }) {
                     onClick={onClose}
                     className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
                   >
-                    İptal
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleStartProcessing}
                     disabled={!selectedModel}
                     className="px-6 py-2 bg-gradient-to-r from-purple-600 to-primary-600 text-white rounded-lg hover:from-purple-700 hover:to-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
-                    İşlemeyi Başlat
+                    {t('batch.start')}
                   </button>
                 </>
               )}
@@ -235,7 +269,7 @@ export default function BatchProcessModal({ imageIds, onClose }) {
                   onClick={onClose}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
                 >
-                  Kapat
+                  {t('common.close')}
                 </button>
               )}
             </div>

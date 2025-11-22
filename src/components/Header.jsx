@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import {
   Menu,
   Upload,
@@ -16,6 +17,7 @@ import { useNavigate } from 'react-router-dom'
 import BatchProcessModal from './BatchProcessModal'
 
 export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
+  const { t } = useLanguage()
   const { user, profile, logout } = useAuth()
   const { selectedImages, clearSelection } = useImages()
   const navigate = useNavigate()
@@ -31,7 +33,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
       // No need to navigate - auth state change will handle redirect
     } catch (error) {
       console.error('❌ Logout error:', error)
-      alert('Çıkış yapılırken bir hata oluştu. Lütfen tekrar deneyin.')
+      alert(t('common.logoutError'))
     }
   }
 
@@ -58,7 +60,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
               <Search className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Görsel ara..."
+                placeholder={t('common.searchImages')}
                 value={searchQuery || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"
@@ -76,7 +78,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
               >
                 <Sparkles className="w-5 h-5" />
                 <span className="hidden sm:inline font-medium">
-                  {selectedImages.length} Görseli İyileştir
+                  {t('common.enhanceImages', { count: selectedImages.length })}
                 </span>
               </button>
             )}
@@ -87,7 +89,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
               className="btn-primary flex items-center gap-2"
             >
               <Upload className="w-5 h-5" />
-              <span className="hidden sm:inline">Yükle</span>
+              <span className="hidden sm:inline">{t('common.upload')}</span>
             </button>
 
             {/* Notifications */}
@@ -155,7 +157,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
                         className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <BarChart3 className="w-5 h-5" />
-                        <span className="text-sm font-medium">İstatistikler</span>
+                        <span className="text-sm font-medium">{t('common.statistics')}</span>
                       </button>
 
                       <button
@@ -166,7 +168,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
                         className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         <Settings className="w-5 h-5" />
-                        <span className="text-sm font-medium">Ayarlar</span>
+                        <span className="text-sm font-medium">{t('common.settings')}</span>
                       </button>
 
                       <button
@@ -174,7 +176,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
                         className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <LogOut className="w-5 h-5" />
-                        <span className="text-sm font-medium">Çıkış Yap</span>
+                        <span className="text-sm font-medium">{t('common.logout')}</span>
                       </button>
                     </div>
                   </div>
@@ -189,7 +191,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
           <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Görsel ara..."
+            placeholder={t('common.searchImages')}
             value={searchQuery || ''}
             onChange={(e) => onSearchChange?.(e.target.value)}
             className="flex-1 bg-transparent outline-none text-sm text-gray-700 placeholder-gray-400"

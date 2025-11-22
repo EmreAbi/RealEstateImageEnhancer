@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import {
   Download,
   Trash2,
@@ -20,6 +21,7 @@ import DashboardStats from './DashboardStats'
 import JSZip from 'jszip'
 
 export default function ImageGallery({ searchQuery = '' }) {
+  const { t } = useLanguage()
   const {
     images,
     selectedFolder,
@@ -109,7 +111,7 @@ export default function ImageGallery({ searchQuery = '' }) {
 
   const handleDelete = () => {
     if (selectedImages.length === 0) return
-    if (confirm(`${selectedImages.length} görseli silmek istediğinize emin misiniz?`)) {
+    if (confirm(t('images.deleteConfirm', { count: selectedImages.length }))) {
       deleteImages(selectedImages)
     }
   }
@@ -163,7 +165,7 @@ export default function ImageGallery({ searchQuery = '' }) {
       clearSelection()
     } catch (error) {
       console.error('Error creating ZIP:', error)
-      alert('ZIP oluşturulurken bir hata oluştu: ' + error.message)
+      alert(t('images.zipError', { error: error.message }))
     }
   }
 
@@ -180,14 +182,14 @@ export default function ImageGallery({ searchQuery = '' }) {
         return (
           <span className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
             <ImageIcon className="w-3 h-3" />
-            Orijinal
+            {t('images.original')}
           </span>
         )
       case 'processing':
         return (
           <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
             <Clock className="w-3 h-3 animate-spin" />
-            İşleniyor
+            {t('images.processing')}
           </span>
         )
       case 'enhanced':
@@ -195,14 +197,14 @@ export default function ImageGallery({ searchQuery = '' }) {
           <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full" title={modelName || 'AI İyileştirildi'}>
             <Sparkles className="w-3 h-3" />
             {modelName && <span>{getModelIcon(modelName)}</span>}
-            İyileştirildi
+            {t('images.enhanced')}
           </span>
         )
       case 'failed':
         return (
           <span className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">
             <AlertTriangle className="w-3 h-3" />
-            Hata
+            {t('images.failed')}
           </span>
         )
       default:
@@ -221,16 +223,16 @@ export default function ImageGallery({ searchQuery = '' }) {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             {searchQuery || filters.status !== 'all' || filters.dateRange !== 'all'
-              ? 'Sonuç bulunamadı'
-              : 'Henüz görsel yok'
+              ? t('images.noResults')
+              : t('dashboard.noImages')
             }
           </h3>
           <p className="text-gray-600 mb-6 max-w-md">
             {searchQuery || filters.status !== 'all' || filters.dateRange !== 'all'
-              ? 'Arama ve filtrelerinizle eşleşen görsel bulunamadı. Filtreleri değiştirmeyi deneyin.'
+              ? t('images.noResultsMessage')
               : selectedFolder
-                ? 'Bu klasörde henüz görsel bulunmuyor. Yükle butonuna tıklayarak görsel ekleyin.'
-                : 'Başlamak için görsel yükleyin veya bir klasör oluşturun.'}
+                ? t('dashboard.noImagesInFolder')
+                : t('dashboard.getStarted')}
           </p>
         </div>
       </div>
@@ -253,7 +255,7 @@ export default function ImageGallery({ searchQuery = '' }) {
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          <span className="text-sm font-medium">Filtrele</span>
+          <span className="text-sm font-medium">{t('images.filter')}</span>
         </button>
 
         {/* Active Filters Display */}
@@ -261,9 +263,9 @@ export default function ImageGallery({ searchQuery = '' }) {
           <div className="flex items-center gap-2 flex-wrap">
             {filters.status !== 'all' && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                Durum: {filters.status === 'original' ? 'Orijinal' :
-                       filters.status === 'enhanced' ? 'İyileştirilmiş' :
-                       filters.status === 'processing' ? 'İşleniyor' : 'Hatalı'}
+                {t('images.filterStatus')}: {filters.status === 'original' ? t('images.original') :
+                       filters.status === 'enhanced' ? t('images.enhanced') :
+                       filters.status === 'processing' ? t('images.processing') : t('images.failed')}
                 <button onClick={() => setFilters({...filters, status: 'all'})} className="ml-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -271,8 +273,8 @@ export default function ImageGallery({ searchQuery = '' }) {
             )}
             {filters.dateRange !== 'all' && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                Tarih: {filters.dateRange === 'today' ? 'Bugün' :
-                       filters.dateRange === 'week' ? 'Bu Hafta' : 'Bu Ay'}
+                {t('images.filterDate')}: {filters.dateRange === 'today' ? t('images.filterToday') :
+                       filters.dateRange === 'week' ? t('images.filterWeek') : t('images.filterMonth')}
                 <button onClick={() => setFilters({...filters, dateRange: 'all'})} className="ml-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -280,7 +282,7 @@ export default function ImageGallery({ searchQuery = '' }) {
             )}
             {filters.sortBy !== 'newest' && (
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                Sıralama: {filters.sortBy === 'oldest' ? 'En Eski' : 'İsme Göre'}
+                {t('images.filterSort')}: {filters.sortBy === 'oldest' ? t('images.filterOldest') : t('images.filterByName')}
                 <button onClick={() => setFilters({...filters, sortBy: 'newest'})} className="ml-1">
                   <X className="w-3 h-3" />
                 </button>
@@ -290,7 +292,7 @@ export default function ImageGallery({ searchQuery = '' }) {
               onClick={() => setFilters({ status: 'all', dateRange: 'all', sortBy: 'newest' })}
               className="text-xs text-gray-500 hover:text-gray-700 underline"
             >
-              Tümünü Temizle
+              {t('images.clearAllFilters')}
             </button>
           </div>
         )}
@@ -302,46 +304,46 @@ export default function ImageGallery({ searchQuery = '' }) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Durum</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('images.filterStatus')}</label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({...filters, status: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               >
-                <option value="all">Tümü</option>
-                <option value="original">Orijinal</option>
-                <option value="processing">İşleniyor</option>
-                <option value="enhanced">İyileştirilmiş</option>
-                <option value="failed">Hatalı</option>
+                <option value="all">{t('images.filterAll')}</option>
+                <option value="original">{t('images.original')}</option>
+                <option value="processing">{t('images.processing')}</option>
+                <option value="enhanced">{t('images.enhanced')}</option>
+                <option value="failed">{t('images.failed')}</option>
               </select>
             </div>
 
             {/* Date Range Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tarih Aralığı</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('images.filterDate')}</label>
               <select
                 value={filters.dateRange}
                 onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               >
-                <option value="all">Tüm Zamanlar</option>
-                <option value="today">Bugün</option>
-                <option value="week">Bu Hafta</option>
-                <option value="month">Bu Ay</option>
+                <option value="all">{t('images.filterAllTime')}</option>
+                <option value="today">{t('images.filterToday')}</option>
+                <option value="week">{t('images.filterWeek')}</option>
+                <option value="month">{t('images.filterMonth')}</option>
               </select>
             </div>
 
             {/* Sort By */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sıralama</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('images.filterSort')}</label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
               >
-                <option value="newest">En Yeni</option>
-                <option value="oldest">En Eski</option>
-                <option value="name">İsme Göre</option>
+                <option value="newest">{t('images.filterNewest')}</option>
+                <option value="oldest">{t('images.filterOldest')}</option>
+                <option value="name">{t('images.filterByName')}</option>
               </select>
             </div>
           </div>
@@ -353,11 +355,11 @@ export default function ImageGallery({ searchQuery = '' }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {selectedFolder ? selectedFolder.name : 'Tüm Görseller'}
+              {selectedFolder ? selectedFolder.name : t('images.allImages')}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {displayImages.length} görsel
-              {searchQuery && ` - "${searchQuery}" için sonuçlar`}
+              {displayImages.length} {t('images.imagesLabel')}
+              {searchQuery && ` - "${searchQuery}" ${t('images.resultsFor')}`}
             </p>
           </div>
 
@@ -367,23 +369,23 @@ export default function ImageGallery({ searchQuery = '' }) {
               <button
                 onClick={handleBulkDownload}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                title="Seçili görselleri ZIP olarak indir"
+                title={t('images.zipDownload')}
               >
                 <Archive className="w-4 h-4" />
-                <span className="hidden sm:inline">İndir ({selectedImages.length})</span>
+                <span className="hidden sm:inline">{t('common.download')} ({selectedImages.length})</span>
               </button>
               <button
                 onClick={handleDelete}
                 className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Sil ({selectedImages.length})</span>
+                <span className="hidden sm:inline">{t('common.delete')} ({selectedImages.length})</span>
               </button>
               <button
                 onClick={clearSelection}
                 className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                İptal
+                {t('common.cancel')}
               </button>
             </div>
           )}
@@ -398,12 +400,12 @@ export default function ImageGallery({ searchQuery = '' }) {
             {selectedImages.length === displayImages.length ? (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Seçimi Kaldır
+                {t('images.clearSelection')}
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                Tümünü Seç
+                {t('images.selectAll')}
               </>
             )}
           </button>
@@ -518,19 +520,19 @@ export default function ImageGallery({ searchQuery = '' }) {
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Görsel
+                  {t('images.image')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Durum
+                  {t('images.status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Boyut
+                  {t('images.size')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Tarih
+                  {t('images.date')}
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  İşlemler
+                  {t('images.operations')}
                 </th>
               </tr>
             </thead>

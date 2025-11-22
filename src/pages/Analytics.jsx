@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useImages } from '../contexts/ImageContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { supabase } from '../lib/supabase'
 import {
   BarChart3,
@@ -16,6 +17,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Analytics() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const { user } = useAuth()
   const { images, aiModels } = useImages()
   const [enhancementLogs, setEnhancementLogs] = useState([])
@@ -109,15 +111,15 @@ export default function Analytics() {
             className="mb-4 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg shadow-sm transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>Ana Sayfaya Dön</span>
+            <span>{t('analytics.backToDashboard')}</span>
           </button>
 
           <div className="flex items-center gap-3 mb-2">
             <BarChart3 className="w-8 h-8 text-primary-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Kullanım İstatistikleri</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('analytics.title')}</h1>
           </div>
           <p className="text-gray-600">
-            Görsel iyileştirme ve kullanım detaylarınız
+            {t('analytics.subtitle')}
           </p>
         </div>
 
@@ -134,11 +136,11 @@ export default function Analytics() {
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Sparkles className="w-5 h-5 text-blue-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">Toplam İşlem</h3>
+                  <h3 className="font-semibold text-gray-700">{t('analytics.totalOperations')}</h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">{stats.totalEnhancements}</p>
                 <p className="text-sm text-green-600 mt-1">
-                  {stats.successfulEnhancements} başarılı
+                  {t('analytics.successfulEnhancements', { count: stats.successfulEnhancements })}
                 </p>
               </div>
 
@@ -147,7 +149,7 @@ export default function Analytics() {
                   <div className="p-2 bg-green-50 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-green-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">Başarı Oranı</h3>
+                  <h3 className="font-semibold text-gray-700">{t('analytics.successRate')}</h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">
                   {stats.totalEnhancements > 0
@@ -155,7 +157,7 @@ export default function Analytics() {
                     : 0}%
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {stats.failedEnhancements} başarısız
+                  {t('analytics.failedEnhancements', { count: stats.failedEnhancements })}
                 </p>
               </div>
 
@@ -164,12 +166,12 @@ export default function Analytics() {
                   <div className="p-2 bg-purple-50 rounded-lg">
                     <Clock className="w-5 h-5 text-purple-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">Ort. Süre</h3>
+                  <h3 className="font-semibold text-gray-700">{t('analytics.avgDuration')}</h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">
                   {(stats.averageDuration / 1000).toFixed(1)}s
                 </p>
-                <p className="text-sm text-gray-500 mt-1">işlem başına</p>
+                <p className="text-sm text-gray-500 mt-1">{t('analytics.perProcess')}</p>
               </div>
 
               <div className="card p-6">
@@ -177,12 +179,12 @@ export default function Analytics() {
                   <div className="p-2 bg-orange-50 rounded-lg">
                     <Activity className="w-5 h-5 text-orange-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-700">Toplam Kredi</h3>
+                  <h3 className="font-semibold text-gray-700">{t('analytics.totalCredits')}</h3>
                 </div>
                 <p className="text-3xl font-bold text-gray-900">
                   {stats.totalCost.toFixed(2)}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">harcanan</p>
+                <p className="text-sm text-gray-500 mt-1">{t('analytics.spent')}</p>
               </div>
             </div>
 
@@ -192,7 +194,7 @@ export default function Analytics() {
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary-600" />
-                  Son 7 Gün Aktivitesi
+                  {t('analytics.last7Days')}
                 </h3>
                 <div className="space-y-4">
                   {last7Days.map(date => (
@@ -225,7 +227,7 @@ export default function Analytics() {
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-primary-600" />
-                  Model Kullanım Dağılımı
+                  {t('analytics.modelUsageDistribution')}
                 </h3>
                 <div className="space-y-4">
                   {Object.entries(modelUsage).map(([model, count]) => {
@@ -246,7 +248,7 @@ export default function Analytics() {
                     )
                   })}
                   {Object.keys(modelUsage).length === 0 && (
-                    <p className="text-center text-gray-500 py-4">Henüz veri yok</p>
+                    <p className="text-center text-gray-500 py-4">{t('analytics.noDataYet')}</p>
                   )}
                 </div>
               </div>
@@ -256,26 +258,26 @@ export default function Analytics() {
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-primary-600" />
-                Son İşlemler
+                {t('analytics.recentActivity')}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Görsel
+                        {t('analytics.image')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Model
+                        {t('analytics.model')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Durum
+                        {t('analytics.statusLabel')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Süre
+                        {t('analytics.duration')}
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Tarih
+                        {t('analytics.date')}
                       </th>
                     </tr>
                   </thead>
@@ -298,8 +300,8 @@ export default function Analytics() {
                                 : 'bg-yellow-100 text-yellow-800'
                             }`}
                           >
-                            {log.status === 'completed' ? 'Başarılı' :
-                             log.status === 'failed' ? 'Başarısız' : 'İşleniyor'}
+                            {log.status === 'completed' ? t('analytics.successful') :
+                             log.status === 'failed' ? t('analytics.failed') : t('analytics.processing')}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
@@ -315,7 +317,7 @@ export default function Analytics() {
                 {recentActivity.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <ImageIcon className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Henüz işlem yapılmamış</p>
+                    <p>{t('analytics.noActivityYet')}</p>
                   </div>
                 )}
               </div>

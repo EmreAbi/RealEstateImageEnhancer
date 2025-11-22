@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { X, Link2, Copy, Check, Calendar, Lock } from 'lucide-react'
+import { useLanguage } from '../contexts/LanguageContext'
 import { createShareLink } from '../lib/supabase'
 
 export default function ShareModal({ image, onClose }) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState(false)
   const [shareLink, setShareLink] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -19,7 +21,7 @@ export default function ShareModal({ image, onClose }) {
       setShareLink(link)
     } catch (error) {
       console.error('Error creating share link:', error)
-      alert('Paylaşım linki oluşturulurken hata: ' + error.message)
+      alert(t('share.errorCreating', { error: error.message }))
     } finally {
       setLoading(false)
     }
@@ -33,8 +35,14 @@ export default function ShareModal({ image, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl max-w-lg w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -42,8 +50,8 @@ export default function ShareModal({ image, onClose }) {
               <Link2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Paylaşım Linki Oluştur</h2>
-              <p className="text-sm text-gray-600">Görseli link ile paylaş</p>
+              <h2 className="text-xl font-bold text-gray-900">{t('share.title')}</h2>
+              <p className="text-sm text-gray-600">{t('share.subtitle')}</p>
             </div>
           </div>
           <button
@@ -73,28 +81,28 @@ export default function ShareModal({ image, onClose }) {
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Başlık (Opsiyonel)
+                  {t('share.titleField')}
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Görsel başlığı..."
+                  placeholder={t('share.titlePlaceholder')}
                 />
               </div>
 
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Açıklama (Opsiyonel)
+                  {t('share.descriptionField')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-                  placeholder="Görsel hakkında bilgi..."
+                  placeholder={t('share.descriptionPlaceholder')}
                 />
               </div>
 
@@ -102,18 +110,18 @@ export default function ShareModal({ image, onClose }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
-                  Geçerlilik Süresi
+                  {t('share.expiresAt')}
                 </label>
                 <select
                   value={formData.expiresInDays}
                   onChange={(e) => setFormData({ ...formData, expiresInDays: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="1">1 Gün</option>
-                  <option value="7">7 Gün</option>
-                  <option value="30">30 Gün</option>
-                  <option value="90">90 Gün</option>
-                  <option value="">Süresiz</option>
+                  <option value="1">{t('share.expiry1Day')}</option>
+                  <option value="7">{t('share.expiry7Days')}</option>
+                  <option value="30">{t('share.expiry30Days')}</option>
+                  <option value="90">{t('share.expiry90Days')}</option>
+                  <option value="">{t('share.expiresNever')}</option>
                 </select>
               </div>
 
@@ -123,7 +131,7 @@ export default function ShareModal({ image, onClose }) {
                 disabled={loading}
                 className="w-full py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50"
               >
-                {loading ? 'Oluşturuluyor...' : 'Paylaşım Linki Oluştur'}
+                {loading ? t('share.creating') : t('share.createButton')}
               </button>
             </div>
           ) : (
@@ -132,14 +140,14 @@ export default function ShareModal({ image, onClose }) {
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <div className="flex items-center gap-2 text-green-800 font-medium">
                   <Check className="w-5 h-5" />
-                  <span>Paylaşım linki başarıyla oluşturuldu!</span>
+                  <span>{t('share.linkCreated')}</span>
                 </div>
               </div>
 
               {/* Share Link */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Paylaşım Linki
+                  {t('share.shareLink')}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -169,13 +177,13 @@ export default function ShareModal({ image, onClose }) {
               <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
                 {formData.expiresInDays && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Geçerlilik Süresi:</span>
-                    <span className="font-medium">{formData.expiresInDays} Gün</span>
+                    <span className="text-gray-600">{t('share.validity')}:</span>
+                    <span className="font-medium">{formData.expiresInDays} {t('share.validity')}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Görüntülenme:</span>
-                  <span className="font-medium">{shareLink.view_count} kez</span>
+                  <span className="text-gray-600">{t('share.viewCount')}:</span>
+                  <span className="font-medium">{shareLink.view_count} {t('share.times')}</span>
                 </div>
               </div>
 
@@ -185,7 +193,7 @@ export default function ShareModal({ image, onClose }) {
                   onClick={onClose}
                   className="flex-1 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium"
                 >
-                  Kapat
+                  {t('share.closeButton')}
                 </button>
                 <a
                   href={`/share/${shareLink.share_token}`}
@@ -193,7 +201,7 @@ export default function ShareModal({ image, onClose }) {
                   rel="noopener noreferrer"
                   className="flex-1 py-2 bg-primary-600 text-white hover:bg-primary-700 rounded-lg transition-colors font-medium text-center"
                 >
-                  Linki Aç
+                  {t('share.openLink')}
                 </a>
               </div>
             </div>
