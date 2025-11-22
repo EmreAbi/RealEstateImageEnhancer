@@ -237,12 +237,24 @@ export const getUserImages = async (userId, retries = 3) => {
       })
 
       const queryPromise = (async () => {
-        const result = await supabase
-          .from('images')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-        return result
+        console.log('🔍 Starting Supabase query...')
+        console.log('📡 Supabase URL:', supabase.supabaseUrl)
+        console.log('👤 Query userId:', userId)
+
+        try {
+          console.log('⏳ Executing .from("images").select("*")...')
+          const result = await supabase
+            .from('images')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+
+          console.log('✨ Query completed, got result:', result)
+          return result
+        } catch (queryError) {
+          console.error('💥 Query threw error:', queryError)
+          throw queryError
+        }
       })()
 
       const result = await Promise.race([queryPromise, timeoutPromise])
