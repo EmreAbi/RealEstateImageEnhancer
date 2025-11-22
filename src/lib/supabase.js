@@ -620,30 +620,97 @@ export const getCreditHistory = async (userId, limit = 100) => {
  */
 
 /**
- * Add watermark to an image
+ * Add watermark to an image (client-side)
  */
 export const addWatermark = async ({ imageId, position = 'bottom-right', opacity = 0.3, logoUrl }) => {
   console.log('🎨 addWatermark called:', { imageId, position, opacity, logoUrl })
 
-  const { data, error } = await supabase.functions.invoke('add-watermark', {
-    body: {
-      imageId,
+  try {
+    // Get image record
+    const { data: imageRecord, error: imageError } = await supabase
+      .from('images')
+      .select('*')
+      .eq('id', imageId)
+      .single()
+
+    if (imageError) throw imageError
+    if (!imageRecord) throw new Error('Image not found')
+
+    console.log('📸 Image record:', imageRecord)
+
+    // Import watermark utility
+    const { addWatermarkToImage } = await import('./watermark.js')
+
+    // Use enhanced image if available, otherwise original
+    const sourceUrl = imageRecord.enhanced_url || imageRecord.original_url
+
+    console.log('🎨 Adding watermark client-side...')
+
+    // Add watermark client-side
+    const watermarkedBlob = await addWatermarkToImage(sourceUrl, logoUrl, {
       position,
       opacity,
-      logoUrl
-    }
-  })
+      logoScale: 0.1
+    })
 
-  if (error) {
-    console.error('❌ add-watermark edge function error:', error)
+    console.log('✅ Watermark added, uploading to storage...')
+
+    // Upload to Supabase Storage
+    const watermarkedPath = `${imageRecord.user_id}/${imageRecord.folder_id}/watermarked-${crypto.randomUUID()}.png`
+
+    const { error: uploadError } = await supabase.storage
+      .from('images')
+      .upload(watermarkedPath, watermarkedBlob, {
+        contentType: 'image/png',
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (uploadError) {
+      console.error('❌ Upload error:', uploadError)
+      throw uploadError
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('images')
+      .getPublicUrl(watermarkedPath)
+
+    console.log('📤 Uploaded to:', publicUrl)
+
+    // Watermark settings
+    const watermarkSettings = {
+      position,
+      opacity,
+      logoUrl,
+      appliedAt: new Date().toISOString()
+    }
+
+    // Update image record
+    const { data: updatedImage, error: updateError } = await supabase
+      .from('images')
+      .update({
+        watermarked_url: publicUrl,
+        watermark_settings: watermarkSettings
+      })
+      .eq('id', imageId)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('❌ Update error:', updateError)
+      throw updateError
+    }
+
+    console.log('✅ addWatermark success:', updatedImage)
+
+    return {
+      image: updatedImage,
+      watermarkedUrl: publicUrl,
+      settings: watermarkSettings
+    }
+  } catch (error) {
+    console.error('❌ addWatermark error:', error)
     throw error
   }
-
-  if (data?.error) {
-    console.error('❌ add-watermark function returned error payload:', data)
-    throw new Error(data.error)
-  }
-
-  console.log('✅ addWatermark success:', data)
-  return data
 }
