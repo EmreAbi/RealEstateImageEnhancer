@@ -622,8 +622,8 @@ export const getCreditHistory = async (userId, limit = 100) => {
 /**
  * Add watermark to an image (client-side)
  */
-export const addWatermark = async ({ imageId, position = 'bottom-right', opacity = 0.3, logoUrl }) => {
-  console.log('🎨 addWatermark called:', { imageId, position, opacity, logoUrl })
+export const addWatermark = async ({ imageId, position = 'bottom-right', opacity = 0.3, logoUrl, logoScale = 0.1 }) => {
+  console.log('🎨 addWatermark called:', { imageId, position, opacity, logoUrl, logoScale })
 
   try {
     // Get image record
@@ -650,7 +650,7 @@ export const addWatermark = async ({ imageId, position = 'bottom-right', opacity
     const watermarkedBlob = await addWatermarkToImage(sourceUrl, logoUrl, {
       position,
       opacity,
-      logoScale: 0.1
+      logoScale
     })
 
     console.log('✅ Watermark added, uploading to storage...')
