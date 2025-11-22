@@ -223,18 +223,36 @@ export const getUserImages = async (userId, retries = 3) => {
   console.log('🖼️  getUserImages called for userId:', userId)
 
   for (let attempt = 1; attempt <= retries; attempt++) {
+    console.log(`🔄 Attempt ${attempt}/${retries}...`)
+
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 15000) // 15s timeout
-      )
+      let timeoutId
+      let didTimeout = false
 
-      const queryPromise = supabase
-        .from('images')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          didTimeout = true
+          reject(new Error('Request timeout'))
+        }, 15000) // 15s timeout
+      })
 
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise])
+      const queryPromise = (async () => {
+        const result = await supabase
+          .from('images')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+        return result
+      })()
+
+      const result = await Promise.race([queryPromise, timeoutPromise])
+      clearTimeout(timeoutId)
+
+      if (didTimeout) {
+        throw new Error('Request timeout')
+      }
+
+      const { data, error } = result
 
       if (error) {
         console.error(`❌ getUserImages error (attempt ${attempt}/${retries}):`, error)
@@ -246,6 +264,7 @@ export const getUserImages = async (userId, retries = 3) => {
         }
 
         // Wait before retry (exponential backoff)
+        console.log(`⏳ Waiting ${attempt}s before retry...`)
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
         continue
       }
@@ -258,13 +277,17 @@ export const getUserImages = async (userId, retries = 3) => {
       console.error(`❌ getUserImages attempt ${attempt}/${retries} failed:`, err.message)
 
       if (attempt === retries) {
+        console.error('❌ All retries exhausted. Giving up.')
         throw err
       }
 
       // Wait before retry
+      console.log(`⏳ Waiting ${attempt}s before retry...`)
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
     }
   }
+
+  throw new Error('getUserImages failed after all retries')
 }
 
 /**
