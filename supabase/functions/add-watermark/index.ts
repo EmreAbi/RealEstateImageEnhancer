@@ -27,6 +27,7 @@ const serverClient = createClient(supabaseUrl, supabaseServiceRoleKey)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
 const errorResponse = (status: number, message: string, details?: Record<string, unknown>) => {
