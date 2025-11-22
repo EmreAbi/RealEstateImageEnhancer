@@ -509,12 +509,20 @@ export default function ImageModal({ image, onClose }) {
                   </div>
                 )}
 
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="w-full flex items-center justify-center gap-2 btn-secondary"
+                >
+                  <Share2 className="w-5 h-5" />
+                  Paylaş
+                </button>
+
                 <a
                   href={image.enhanced_url || image.original_url}
                   download={image.name}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 btn-secondary"
+                  className="w-full flex items-center justify-center gap-2 btn-primary"
                 >
                   <Download className="w-5 h-5" />
                   İndir
@@ -535,6 +543,14 @@ export default function ImageModal({ image, onClose }) {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          image={image}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   )
 }
