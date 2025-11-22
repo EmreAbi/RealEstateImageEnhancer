@@ -7,6 +7,7 @@ import {
   Menu,
   Upload,
   Sparkles,
+  Droplet,
   LogOut,
   ChevronDown,
   Search,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import BatchProcessModal from './BatchProcessModal'
+import WatermarkModal from './WatermarkModal'
 import NotificationPanel from './NotificationPanel'
 
 export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearchChange }) {
@@ -27,6 +29,7 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showBatchModal, setShowBatchModal] = useState(false)
+  const [showWatermarkModal, setShowWatermarkModal] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
 
@@ -46,6 +49,11 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
   const handleEnhance = () => {
     if (selectedImages.length === 0) return
     setShowBatchModal(true)
+  }
+
+  const handleWatermark = () => {
+    if (selectedImages.length === 0) return
+    setShowWatermarkModal(true)
   }
 
   return (
@@ -78,15 +86,26 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
           <div className="flex items-center gap-3">
             {/* Enhanced Button */}
             {selectedImages.length > 0 && (
-              <button
-                onClick={handleEnhance}
-                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span className="hidden sm:inline font-medium">
-                  {t('common.enhanceImages', { count: selectedImages.length })}
-                </span>
-              </button>
+              <>
+                <button
+                  onClick={handleEnhance}
+                  className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span className="hidden sm:inline font-medium">
+                    {t('common.enhanceImages', { count: selectedImages.length })}
+                  </span>
+                </button>
+                <button
+                  onClick={handleWatermark}
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-2 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant"
+                >
+                  <Droplet className="w-5 h-5" />
+                  <span className="hidden sm:inline font-medium">
+                    {t('watermark.addWatermark')}
+                  </span>
+                </button>
+              </>
             )}
 
             {/* Upload Button */}
@@ -268,6 +287,17 @@ export default function Header({ onToggleSidebar, onUpload, searchQuery, onSearc
           imageIds={selectedImages}
           onClose={() => {
             setShowBatchModal(false)
+            clearSelection()
+          }}
+        />
+      )}
+
+      {/* Watermark Modal */}
+      {showWatermarkModal && (
+        <WatermarkModal
+          imageIds={selectedImages}
+          onClose={() => {
+            setShowWatermarkModal(false)
             clearSelection()
           }}
         />
