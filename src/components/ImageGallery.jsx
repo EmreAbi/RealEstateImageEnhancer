@@ -132,8 +132,8 @@ export default function ImageGallery({ searchQuery = '' }) {
 
       for (const image of selectedImagesData) {
         try {
-          // Use enhanced URL if available, otherwise original
-          const imageUrl = image.enhanced_url || image.original_url
+          // Use watermarked URL if available, then enhanced, then original
+          const imageUrl = image.watermarked_url || image.enhanced_url || image.original_url
 
           // Fetch image as blob
           const response = await fetch(imageUrl)
@@ -452,7 +452,7 @@ export default function ImageGallery({ searchQuery = '' }) {
               {/* Image */}
               <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
                 <img
-                  src={image.enhanced_url || image.original_url}
+                  src={image.watermarked_url || image.enhanced_url || image.original_url}
                   alt={image.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onClick={(e) => {
@@ -502,7 +502,7 @@ export default function ImageGallery({ searchQuery = '' }) {
                   <Droplet className="w-5 h-5 text-blue-600" />
                 </button>
                 <a
-                  href={image.enhanced_url || image.original_url}
+                  href={image.watermarked_url || image.enhanced_url || image.original_url}
                   download={image.name}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -568,7 +568,7 @@ export default function ImageGallery({ searchQuery = '' }) {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={image.enhanced_url || image.original_url}
+                        src={image.watermarked_url || image.enhanced_url || image.original_url}
                         alt={image.name}
                         className="w-12 h-12 rounded-lg object-cover cursor-pointer"
                         onClick={() => setImageModal(image)}
@@ -597,7 +597,7 @@ export default function ImageGallery({ searchQuery = '' }) {
                         <ImageIcon className="w-4 h-4 text-gray-600" />
                       </button>
                       <a
-                        href={image.enhanced_url || image.original_url}
+                        href={image.watermarked_url || image.enhanced_url || image.original_url}
                         download={image.name}
                         target="_blank"
                         rel="noopener noreferrer"
