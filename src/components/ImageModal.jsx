@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Sparkles, Droplet, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2 } from 'lucide-react'
+import { X, Download, Sparkles, Droplet, Calendar, HardDrive, Maximize2, AlertTriangle, RotateCcw, Share2, Sofa } from 'lucide-react'
 import { useImages } from '../contexts/ImageContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -9,7 +9,7 @@ import ImageWatermarkPanel from './ImageWatermarkPanel'
 
 export default function ImageModal({ image, onClose }) {
   const { t } = useLanguage()
-  const { enhanceImages } = useImages()
+  const { enhanceImages, decorateRooms } = useImages()
   const { settings } = useSettings()
   const [sliderPosition, setSliderPosition] = useState(50)
   const [isDragging, setIsDragging] = useState(false)
@@ -61,6 +61,12 @@ export default function ImageModal({ image, onClose }) {
   const handleEnhance = async () => {
     if (selectedModel) {
       await enhanceImages([image.id], selectedModel.id)
+    }
+  }
+
+  const handleDecorate = async () => {
+    if (selectedModel) {
+      await decorateRooms([image.id], selectedModel.id)
     }
   }
 
@@ -391,16 +397,26 @@ export default function ImageModal({ image, onClose }) {
                     <button
                       onClick={handleEnhance}
                       disabled={!selectedModel}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-primary-600 hover:from-purple-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-primary-600 hover:from-blue-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Sparkles className="w-5 h-5" />
                       {image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance')}
                     </button>
 
+                    {/* Decorate Button */}
+                    <button
+                      onClick={handleDecorate}
+                      disabled={!selectedModel}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Sofa className="w-5 h-5" />
+                      {t('decoration.decorateRoom')}
+                    </button>
+
                     {/* Watermark Button */}
                     <button
                       onClick={() => setShowWatermarkPanel(!showWatermarkPanel)}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium"
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium"
                     >
                       <Droplet className="w-5 h-5" />
                       {t('watermark.addWatermark')}

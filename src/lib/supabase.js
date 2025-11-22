@@ -409,6 +409,34 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
 }
 
 /**
+ * Invoke the edge function that decorates a room using AI
+ */
+export const invokeRoomDecoration = async ({ imageId, aiModelId, promptOverride }) => {
+  console.log('🪑 invokeRoomDecoration called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
+
+  const { data, error } = await supabase.functions.invoke('decorate-room', {
+    body: {
+      imageId,
+      aiModelId,
+      ...(promptOverride ? { promptOverride } : {})
+    }
+  })
+
+  if (error) {
+    console.error('❌ decorate-room edge function error:', error)
+    throw error
+  }
+
+  if (data?.error) {
+    console.error('❌ decorate-room function returned error payload:', data)
+    throw new Error(data.error)
+  }
+
+  console.log('✅ invokeRoomDecoration success:', data)
+  return data
+}
+
+/**
  * Share Links Functions
  */
 

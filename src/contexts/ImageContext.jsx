@@ -13,7 +13,8 @@ import {
   uploadImage,
   deleteImageFromStorage,
   getAIModels,
-  invokeImageEnhancement
+  invokeImageEnhancement,
+  invokeRoomDecoration
 } from '../lib/supabase'
 
 const ImageContext = createContext(null)
@@ -392,6 +393,94 @@ export const ImageProvider = ({ children }) => {
     setSelectedImages([])
   }
 
+  const decorateRooms = async (imageIds, modelId) => {
+    const processedIds = []
+    const decorationResults = []
+
+    try {
+      if (!user?.id) throw new Error('User not authenticated')
+
+      // Use modelId parameter, or fall back to Settings preferred model, then selectedAIModel
+      let aiModelId = modelId || selectedAIModel
+
+      // If still no model, try to find by preferredAiModel from settings
+      if (!aiModelId && settings.preferredAiModel) {
+        const preferredModel = aiModels.find(m => m.model_identifier === settings.preferredAiModel)
+        if (preferredModel) {
+          aiModelId = preferredModel.id
+        }
+      }
+
+      if (!aiModelId) throw new Error('No AI model selected')
+
+      // Optimistically mark images as processing in UI
+      setImages(prevImages =>
+        prevImages.map(img =>
+          imageIds.includes(img.id) ? { ...img, status: 'processing' } : img
+        )
+      )
+
+      for (const imageId of imageIds) {
+        try {
+          const result = await invokeRoomDecoration({ imageId, aiModelId })
+          decorationResults.push(result)
+          processedIds.push(imageId)
+
+          if (result?.image) {
+            setImages(prevImages =>
+              prevImages.map(img => (img.id === imageId ? { ...img, ...result.image } : img))
+            )
+
+            // Send success notification
+            const imageName = images.find(img => img.id === imageId)?.file_name || 'Image'
+            notifySuccess(
+              'notifications.roomDecorated',
+              'notifications.roomDecoratedMessage',
+              {
+                imageId,
+                imageName,
+              }
+            )
+          }
+        } catch (decorateError) {
+          console.error('❌ Error decorating room:', imageId, decorateError)
+          setImages(prevImages =>
+            prevImages.map(img =>
+              img.id === imageId ? { ...img, status: 'failed' } : img
+            )
+          )
+
+          // Send error notification
+          const imageName = images.find(img => img.id === imageId)?.file_name || 'Image'
+          notifyError(
+            'notifications.roomDecorateFailed',
+            'notifications.roomDecorateFailedMessage',
+            {
+              imageId,
+              imageName,
+            }
+          )
+          throw decorateError
+        }
+      }
+
+      // Refresh folders and images to sync counts/statuses
+      await loadData()
+
+      return decorationResults
+    } catch (error) {
+      console.error('Error decorating rooms:', error)
+      setImages(prevImages =>
+        prevImages.map(img =>
+          imageIds.includes(img.id) && !processedIds.includes(img.id)
+            ? { ...img, status: 'failed' }
+            : img
+        )
+      )
+      throw error
+    }
+  }
+
   const value = {
     folders,
     images,
@@ -409,6 +498,7 @@ export const ImageProvider = ({ children }) => {
     uploadImages,
     deleteImages,
     enhanceImages,
+    decorateRooms,
     getImagesByFolder,
     toggleImageSelection,
     selectAllImages,
