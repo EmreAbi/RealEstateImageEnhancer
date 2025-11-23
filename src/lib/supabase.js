@@ -553,47 +553,53 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
   console.log('🚀 invokeImageEnhancement called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
 
   try {
-    console.log('🔵 About to call supabase.functions.invoke("enhance-image")...')
-    console.log('📦 Request body:', { imageId, aiModelId, promptOverride })
-    console.log('🔗 Supabase URL:', supabaseUrl)
-    console.log('🔗 Expected edge function URL:', `${supabaseUrl}/functions/v1/enhance-image`)
+    console.log('🔵 Using direct fetch to call enhance-image edge function...')
 
-    // Check if supabase client exists
-    if (!supabase) {
-      throw new Error('Supabase client is not initialized')
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      throw new Error('No active session')
     }
-    console.log('✅ Supabase client exists')
 
-    const invokePromise = supabase.functions.invoke('enhance-image', {
-      body: {
-        imageId,
-        aiModelId,
-        ...(promptOverride ? { promptOverride } : {})
-      }
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/enhance-image`
+    console.log('🔗 Edge function URL:', edgeFunctionUrl)
+
+    const requestBody = {
+      imageId,
+      aiModelId,
+      ...(promptOverride ? { promptOverride } : {})
+    }
+    console.log('📦 Request body:', requestBody)
+
+    console.log('⏳ Sending fetch request...')
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': supabaseAnonKey
+      },
+      body: JSON.stringify(requestBody)
     })
 
-    console.log('⏳ Waiting for edge function response...')
+    console.log('📥 Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    })
 
-    // Add timeout to detect hanging requests
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Edge function request timeout after 30 seconds')), 30000)
-    )
-
-    const result = await Promise.race([invokePromise, timeoutPromise])
-    console.log('📥 Edge function response received:', result)
-
-    const { data, error } = result
-
-    if (error) {
-      console.error('❌ enhance-image edge function error:', error)
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        status: error.status,
-        statusText: error.statusText
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ Edge function HTTP error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
       })
-      throw error
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
     }
+
+    const data = await response.json()
+    console.log('📦 Response data:', data)
 
     if (data?.error) {
       console.error('❌ enhance-image function returned error payload:', data)
@@ -618,47 +624,53 @@ export const invokeRoomDecoration = async ({ imageId, aiModelId, promptOverride 
   console.log('🪑 invokeRoomDecoration called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
 
   try {
-    console.log('🔵 About to call supabase.functions.invoke("decorate-room")...')
-    console.log('📦 Request body:', { imageId, aiModelId, promptOverride })
-    console.log('🔗 Supabase URL:', supabaseUrl)
-    console.log('🔗 Expected edge function URL:', `${supabaseUrl}/functions/v1/decorate-room`)
+    console.log('🔵 Using direct fetch to call decorate-room edge function...')
 
-    // Check if supabase client exists
-    if (!supabase) {
-      throw new Error('Supabase client is not initialized')
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) {
+      throw new Error('No active session')
     }
-    console.log('✅ Supabase client exists')
 
-    const invokePromise = supabase.functions.invoke('decorate-room', {
-      body: {
-        imageId,
-        aiModelId,
-        ...(promptOverride ? { promptOverride } : {})
-      }
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/decorate-room`
+    console.log('🔗 Edge function URL:', edgeFunctionUrl)
+
+    const requestBody = {
+      imageId,
+      aiModelId,
+      ...(promptOverride ? { promptOverride } : {})
+    }
+    console.log('📦 Request body:', requestBody)
+
+    console.log('⏳ Sending fetch request...')
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': supabaseAnonKey
+      },
+      body: JSON.stringify(requestBody)
     })
 
-    console.log('⏳ Waiting for edge function response...')
+    console.log('📥 Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    })
 
-    // Add timeout to detect hanging requests
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Edge function request timeout after 30 seconds')), 30000)
-    )
-
-    const result = await Promise.race([invokePromise, timeoutPromise])
-    console.log('📥 Edge function response received:', result)
-
-    const { data, error } = result
-
-    if (error) {
-      console.error('❌ decorate-room edge function error:', error)
-      console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        status: error.status,
-        statusText: error.statusText
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ Edge function HTTP error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
       })
-      throw error
+      throw new Error(`HTTP ${response.status}: ${errorText}`)
     }
+
+    const data = await response.json()
+    console.log('📦 Response data:', data)
 
     if (data?.error) {
       console.error('❌ decorate-room function returned error payload:', data)
