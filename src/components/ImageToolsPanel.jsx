@@ -25,6 +25,10 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isDecorating, setIsDecorating] = useState(false)
 
+  // Error states
+  const [enhanceError, setEnhanceError] = useState(null)
+  const [decorateError, setDecorateError] = useState(null)
+
   // Watermark state
   const savedSettings = JSON.parse(localStorage.getItem('watermarkSettings') || '{}')
   const [watermarkPosition, setWatermarkPosition] = useState(savedSettings.position || 'bottom-right')
@@ -110,27 +114,51 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
 
   const handleEnhance = async () => {
     if (selectedModel) {
+      console.log('🎨 handleEnhance called with:', { imageId: image.id, modelId: selectedModel.id, modelName: selectedModel.display_name })
       try {
         setIsEnhancing(true)
+        setEnhanceError(null)
+        console.log('📤 Calling enhanceImages...')
         await enhanceImages([image.id], selectedModel.id)
+        console.log('✅ enhanceImages completed successfully')
       } catch (error) {
-        console.error('Error enhancing image:', error)
+        console.error('❌ Error enhancing image:', error)
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        })
+        setEnhanceError(error.message || 'Görsel iyileştirme başarısız oldu')
       } finally {
         setIsEnhancing(false)
       }
+    } else {
+      console.warn('⚠️ handleEnhance called without selectedModel')
     }
   }
 
   const handleDecorate = async () => {
     if (selectedModel) {
+      console.log('🪑 handleDecorate called with:', { imageId: image.id, modelId: selectedModel.id, modelName: selectedModel.display_name })
       try {
         setIsDecorating(true)
+        setDecorateError(null)
+        console.log('📤 Calling decorateRooms...')
         await decorateRooms([image.id], selectedModel.id)
+        console.log('✅ decorateRooms completed successfully')
       } catch (error) {
-        console.error('Error decorating room:', error)
+        console.error('❌ Error decorating room:', error)
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        })
+        setDecorateError(error.message || 'Oda dekorasyonu başarısız oldu')
       } finally {
         setIsDecorating(false)
       }
+    } else {
+      console.warn('⚠️ handleDecorate called without selectedModel')
     }
   }
 
@@ -342,6 +370,24 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
                 <Sparkles className={`w-5 h-5 ${isEnhancing ? 'animate-spin' : ''}`} />
                 {isEnhancing ? t('images.enhancing') : !selectedModel ? t('images.selectModel') : (image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance'))}
               </button>
+            )}
+
+            {/* Error Message */}
+            {enhanceError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-red-700">{enhanceError}</p>
+                    <button
+                      onClick={() => setEnhanceError(null)}
+                      className="text-xs text-red-600 underline hover:text-red-700 mt-1"
+                    >
+                      Kapat
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Info Box */}
@@ -657,6 +703,24 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
                 <Sofa className={`w-5 h-5 ${isDecorating ? 'animate-pulse' : ''}`} />
                 {isDecorating ? t('decoration.decorating') : !selectedModel ? t('images.selectModel') : t('decoration.decorateRoom')}
               </button>
+            )}
+
+            {/* Error Message */}
+            {decorateError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-red-700">{decorateError}</p>
+                    <button
+                      onClick={() => setDecorateError(null)}
+                      className="text-xs text-red-600 underline hover:text-red-700 mt-1"
+                    >
+                      Kapat
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Info Box */}
