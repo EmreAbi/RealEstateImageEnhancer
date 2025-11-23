@@ -555,11 +555,22 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
   try {
     console.log('🔵 Using direct fetch to call enhance-image edge function...')
 
-    // Get auth token
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) {
-      throw new Error('No active session')
+    // Get token from localStorage directly (same as getUserImages)
+    const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+    console.log('🔑 Looking for token in localStorage with key:', storageKey)
+
+    const authData = localStorage.getItem(storageKey)
+    if (!authData) {
+      console.error('❌ No auth data in localStorage')
+      throw new Error('No auth data in localStorage')
     }
+
+    const { access_token } = JSON.parse(authData)
+    if (!access_token) {
+      console.error('❌ No access token in stored data')
+      throw new Error('No access token')
+    }
+    console.log('✅ Access token retrieved from localStorage')
 
     const edgeFunctionUrl = `${supabaseUrl}/functions/v1/enhance-image`
     console.log('🔗 Edge function URL:', edgeFunctionUrl)
@@ -576,7 +587,7 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${access_token}`,
         'apikey': supabaseAnonKey
       },
       body: JSON.stringify(requestBody)
@@ -626,11 +637,22 @@ export const invokeRoomDecoration = async ({ imageId, aiModelId, promptOverride 
   try {
     console.log('🔵 Using direct fetch to call decorate-room edge function...')
 
-    // Get auth token
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.access_token) {
-      throw new Error('No active session')
+    // Get token from localStorage directly (same as getUserImages)
+    const storageKey = `sb-${supabaseUrl.split('//')[1].split('.')[0]}-auth-token`
+    console.log('🔑 Looking for token in localStorage with key:', storageKey)
+
+    const authData = localStorage.getItem(storageKey)
+    if (!authData) {
+      console.error('❌ No auth data in localStorage')
+      throw new Error('No auth data in localStorage')
     }
+
+    const { access_token } = JSON.parse(authData)
+    if (!access_token) {
+      console.error('❌ No access token in stored data')
+      throw new Error('No access token')
+    }
+    console.log('✅ Access token retrieved from localStorage')
 
     const edgeFunctionUrl = `${supabaseUrl}/functions/v1/decorate-room`
     console.log('🔗 Edge function URL:', edgeFunctionUrl)
@@ -647,7 +669,7 @@ export const invokeRoomDecoration = async ({ imageId, aiModelId, promptOverride 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${access_token}`,
         'apikey': supabaseAnonKey
       },
       body: JSON.stringify(requestBody)
