@@ -3,13 +3,13 @@ import { Sparkles, Droplet, Sofa, Eye, EyeOff, AlertTriangle } from 'lucide-reac
 import { useLanguage } from '../contexts/LanguageContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { useImages } from '../contexts/ImageContext'
-import { supabase, addWatermark } from '../lib/supabase'
+import { addWatermark } from '../lib/supabase'
 import { generateWatermarkPreview } from '../lib/watermark'
 
 export default function ImageToolsPanel({ image, onShowOriginalChange }) {
   const { t } = useLanguage()
   const { settings } = useSettings()
-  const { enhanceImages, decorateRooms, refreshData } = useImages()
+  const { enhanceImages, decorateRooms, refreshData, aiModels: contextAiModels } = useImages()
 
   // Tab state
   const [activeTab, setActiveTab] = useState('enhance')
@@ -18,11 +18,8 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
   const [showOriginal, setShowOriginal] = useState(false)
 
   // AI Models state (shared between Enhance and Decorate)
-  const [aiModels, setAiModels] = useState([])
   const [selectedModel, setSelectedModel] = useState(null)
   const [showModelSelect, setShowModelSelect] = useState(false)
-  const [modelsLoading, setModelsLoading] = useState(true)
-  const [modelsError, setModelsError] = useState(null)
 
   // Processing states
   const [isEnhancing, setIsEnhancing] = useState(false)
@@ -43,9 +40,10 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
   // Check if image has any processed versions
   const hasProcessedVersions = Boolean(image.enhanced_url || image.watermarked_url)
 
-  useEffect(() => {
-    fetchAiModels()
-  }, [])
+  // Use AI models from context
+  const aiModels = contextAiModels || []
+  const modelsLoading = !contextAiModels
+  const modelsError = contextAiModels && contextAiModels.length === 0 ? 'Aktif AI modeli bulunamadı. Lütfen sistem yöneticinizle iletişime geçin.' : null
 
   useEffect(() => {
     // Set default model from settings
@@ -53,7 +51,7 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
       const preferred = aiModels.find(m => m.model_identifier === settings.preferredAiModel)
       setSelectedModel(preferred || aiModels[0])
     }
-  }, [aiModels, settings.preferredAiModel])
+  }, [aiModels, settings.preferredAiModel, selectedModel])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -109,32 +107,6 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
       onShowOriginalChange(showOriginal)
     }
   }, [showOriginal, onShowOriginalChange])
-
-  const fetchAiModels = async () => {
-    try {
-      setModelsLoading(true)
-      setModelsError(null)
-
-      const { data, error } = await supabase
-        .from('ai_models')
-        .select('*')
-        .eq('is_active', true)
-        .order('provider', { ascending: true })
-
-      if (error) throw error
-
-      if (!data || data.length === 0) {
-        setModelsError('Aktif AI modeli bulunamadı. Lütfen sistem yöneticinizle iletişime geçin.')
-      } else {
-        setAiModels(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch AI models:', error)
-      setModelsError('AI modelleri yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.')
-    } finally {
-      setModelsLoading(false)
-    }
-  }
 
   const handleEnhance = async () => {
     if (selectedModel) {
@@ -353,10 +325,10 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
                   <div className="flex-1">
                     <p className="text-sm text-red-700 mb-2">{modelsError}</p>
                     <button
-                      onClick={fetchAiModels}
+                      onClick={refreshData}
                       className="text-sm text-red-700 underline hover:text-red-800"
                     >
-                      Tekrar dene
+                      Sayfayı yenile
                     </button>
                   </div>
                 </div>
@@ -668,10 +640,10 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
                   <div className="flex-1">
                     <p className="text-sm text-red-700 mb-2">{modelsError}</p>
                     <button
-                      onClick={fetchAiModels}
+                      onClick={refreshData}
                       className="text-sm text-red-700 underline hover:text-red-800"
                     >
-                      Tekrar dene
+                      Sayfayı yenile
                     </button>
                   </div>
                 </div>
