@@ -552,26 +552,63 @@ export const getUserEnhancementHistory = async (userId, limit = 50) => {
 export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverride }) => {
   console.log('🚀 invokeImageEnhancement called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
 
-  const { data, error } = await supabase.functions.invoke('enhance-image', {
-    body: {
-      imageId,
-      aiModelId,
-      ...(promptOverride ? { promptOverride } : {})
+  try {
+    console.log('🔵 About to call supabase.functions.invoke("enhance-image")...')
+    console.log('📦 Request body:', { imageId, aiModelId, promptOverride })
+    console.log('🔗 Supabase URL:', supabaseUrl)
+    console.log('🔗 Expected edge function URL:', `${supabaseUrl}/functions/v1/enhance-image`)
+
+    // Check if supabase client exists
+    if (!supabase) {
+      throw new Error('Supabase client is not initialized')
     }
-  })
+    console.log('✅ Supabase client exists')
 
-  if (error) {
-    console.error('❌ enhance-image edge function error:', error)
-    throw error
+    const invokePromise = supabase.functions.invoke('enhance-image', {
+      body: {
+        imageId,
+        aiModelId,
+        ...(promptOverride ? { promptOverride } : {})
+      }
+    })
+
+    console.log('⏳ Waiting for edge function response...')
+
+    // Add timeout to detect hanging requests
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Edge function request timeout after 30 seconds')), 30000)
+    )
+
+    const result = await Promise.race([invokePromise, timeoutPromise])
+    console.log('📥 Edge function response received:', result)
+
+    const { data, error } = result
+
+    if (error) {
+      console.error('❌ enhance-image edge function error:', error)
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        status: error.status,
+        statusText: error.statusText
+      })
+      throw error
+    }
+
+    if (data?.error) {
+      console.error('❌ enhance-image function returned error payload:', data)
+      throw new Error(data.error)
+    }
+
+    console.log('✅ invokeImageEnhancement success:', data)
+    return data
+  } catch (err) {
+    console.error('💥 invokeImageEnhancement exception:', err)
+    console.error('Exception type:', err.constructor.name)
+    console.error('Exception message:', err.message)
+    console.error('Exception stack:', err.stack)
+    throw err
   }
-
-  if (data?.error) {
-    console.error('❌ enhance-image function returned error payload:', data)
-    throw new Error(data.error)
-  }
-
-  console.log('✅ invokeImageEnhancement success:', data)
-  return data
 }
 
 /**
@@ -580,26 +617,63 @@ export const invokeImageEnhancement = async ({ imageId, aiModelId, promptOverrid
 export const invokeRoomDecoration = async ({ imageId, aiModelId, promptOverride }) => {
   console.log('🪑 invokeRoomDecoration called:', { imageId, aiModelId, hasPromptOverride: !!promptOverride })
 
-  const { data, error } = await supabase.functions.invoke('decorate-room', {
-    body: {
-      imageId,
-      aiModelId,
-      ...(promptOverride ? { promptOverride } : {})
+  try {
+    console.log('🔵 About to call supabase.functions.invoke("decorate-room")...')
+    console.log('📦 Request body:', { imageId, aiModelId, promptOverride })
+    console.log('🔗 Supabase URL:', supabaseUrl)
+    console.log('🔗 Expected edge function URL:', `${supabaseUrl}/functions/v1/decorate-room`)
+
+    // Check if supabase client exists
+    if (!supabase) {
+      throw new Error('Supabase client is not initialized')
     }
-  })
+    console.log('✅ Supabase client exists')
 
-  if (error) {
-    console.error('❌ decorate-room edge function error:', error)
-    throw error
+    const invokePromise = supabase.functions.invoke('decorate-room', {
+      body: {
+        imageId,
+        aiModelId,
+        ...(promptOverride ? { promptOverride } : {})
+      }
+    })
+
+    console.log('⏳ Waiting for edge function response...')
+
+    // Add timeout to detect hanging requests
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Edge function request timeout after 30 seconds')), 30000)
+    )
+
+    const result = await Promise.race([invokePromise, timeoutPromise])
+    console.log('📥 Edge function response received:', result)
+
+    const { data, error } = result
+
+    if (error) {
+      console.error('❌ decorate-room edge function error:', error)
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        status: error.status,
+        statusText: error.statusText
+      })
+      throw error
+    }
+
+    if (data?.error) {
+      console.error('❌ decorate-room function returned error payload:', data)
+      throw new Error(data.error)
+    }
+
+    console.log('✅ invokeRoomDecoration success:', data)
+    return data
+  } catch (err) {
+    console.error('💥 invokeRoomDecoration exception:', err)
+    console.error('Exception type:', err.constructor.name)
+    console.error('Exception message:', err.message)
+    console.error('Exception stack:', err.stack)
+    throw err
   }
-
-  if (data?.error) {
-    console.error('❌ decorate-room function returned error payload:', data)
-    throw new Error(data.error)
-  }
-
-  console.log('✅ invokeRoomDecoration success:', data)
-  return data
 }
 
 /**
