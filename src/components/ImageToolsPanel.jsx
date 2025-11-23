@@ -323,14 +323,23 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
             )}
 
             {/* Enhance Button */}
-            <button
-              onClick={handleEnhance}
-              disabled={!selectedModel || isEnhancing || isDecorating}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-primary-600 hover:from-blue-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Sparkles className={`w-5 h-5 ${isEnhancing ? 'animate-spin' : ''}`} />
-              {isEnhancing ? t('images.enhancing') : (image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance'))}
-            </button>
+            {aiModels.length === 0 ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <p className="text-sm text-amber-700">AI modelleri yükleniyor...</p>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={handleEnhance}
+                disabled={!selectedModel || isEnhancing || isDecorating}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-primary-600 hover:from-blue-700 hover:to-primary-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles className={`w-5 h-5 ${isEnhancing ? 'animate-spin' : ''}`} />
+                {isEnhancing ? t('images.enhancing') : !selectedModel ? t('images.selectModel') : (image.status === 'enhanced' ? t('images.enhanceAgain') : t('images.enhance'))}
+              </button>
+            )}
 
             {/* Info Box */}
             <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
@@ -611,14 +620,23 @@ export default function ImageToolsPanel({ image, onShowOriginalChange }) {
             )}
 
             {/* Decorate Button */}
-            <button
-              onClick={handleDecorate}
-              disabled={!selectedModel || isEnhancing || isDecorating}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Sofa className={`w-5 h-5 ${isDecorating ? 'animate-pulse' : ''}`} />
-              {isDecorating ? t('decoration.decorating') : t('decoration.decorateRoom')}
-            </button>
+            {aiModels.length === 0 ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <p className="text-sm text-amber-700">AI modelleri yükleniyor...</p>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={handleDecorate}
+                disabled={!selectedModel || isEnhancing || isDecorating}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-lg transition-all duration-200 shadow-soft hover:shadow-elegant font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sofa className={`w-5 h-5 ${isDecorating ? 'animate-pulse' : ''}`} />
+                {isDecorating ? t('decoration.decorating') : !selectedModel ? t('images.selectModel') : t('decoration.decorateRoom')}
+              </button>
+            )}
 
             {/* Info Box */}
             <div className="p-4 bg-purple-50 border border-purple-100 rounded-lg">
