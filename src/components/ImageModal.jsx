@@ -77,8 +77,9 @@ export default function ImageModal({ image, onClose }) {
         {/* Modal Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Image Preview */}
-            <div className="lg:col-span-2">
+            {/* Left Column - Image + Metadata */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Image Preview */}
               <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-video flex items-center justify-center">
                 <img
                   src={
@@ -96,105 +97,84 @@ export default function ImageModal({ image, onClose }) {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Image Details */}
-            <div className="space-y-6">
-              {/* Status */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                  {t('images.status')}
-                </h3>
-                <span className={`inline-flex items-center gap-2 px-4 py-2 ${statusInfo.bgColor} ${statusInfo.color} text-sm font-medium rounded-lg`}>
-                  {image.status === 'processing' && (
-                    <Sparkles className="w-4 h-4 animate-spin" />
-                  )}
-                  {image.status === 'enhanced' && (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  {image.status === 'failed' && (
-                    <AlertTriangle className="w-4 h-4" />
-                  )}
-                  {statusInfo.text}
-                </span>
-              </div>
+              {/* Metadata Below Image */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Status */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                    {t('images.status')}
+                  </h3>
+                  <span className={`inline-flex items-center gap-2 px-3 py-1.5 ${statusInfo.bgColor} ${statusInfo.color} text-sm font-medium rounded-lg`}>
+                    {image.status === 'processing' && (
+                      <Sparkles className="w-4 h-4 animate-spin" />
+                    )}
+                    {image.status === 'enhanced' && (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {image.status === 'failed' && (
+                      <AlertTriangle className="w-4 h-4" />
+                    )}
+                    {statusInfo.text}
+                  </span>
+                </div>
 
-              {/* Information */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                  {t('images.information')}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">{t('images.uploadDate')}</p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {new Date(image.created_at).toLocaleDateString('tr-TR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
+                {/* Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+                    {t('images.information')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-900 font-medium">
+                          {new Date(image.created_at).toLocaleDateString('tr-TR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-3">
-                    <HardDrive className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">{t('images.fileSize')}</p>
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <p className="text-xs text-gray-900 font-medium">
                         {image.file_size ? `${(image.file_size / 1024 / 1024).toFixed(2)} MB` : 'N/A'}
                       </p>
                     </div>
-                  </div>
 
-                  <div className="flex items-start gap-3">
-                    <Maximize2 className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">{t('images.fileName')}</p>
-                      <p className="text-sm font-medium text-gray-900 break-all">
-                        {image.name}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* AI Model Info - Show only if enhanced */}
-                  {image.status === 'enhanced' && image.metadata?.enhancement?.model && (
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-500">{t('images.enhancementModel')}</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {image.metadata.enhancement.model.includes('openai') || image.metadata.enhancement.model.includes('gpt-image') 
-                            ? '🤖 OpenAI GPT-Image-1' 
+                    {/* AI Model Info - Show only if enhanced */}
+                    {image.status === 'enhanced' && image.metadata?.enhancement?.model && (
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <p className="text-xs text-gray-900 font-medium">
+                          {image.metadata.enhancement.model.includes('openai') || image.metadata.enhancement.model.includes('gpt-image')
+                            ? '🤖 OpenAI'
                             : image.metadata.enhancement.model.includes('flux-pro')
-                            ? '🎨 FAL.AI Flux Pro'
+                            ? '🎨 Flux Pro'
                             : image.metadata.enhancement.model.includes('reve')
-                            ? '🎨 FAL.AI Reve Remix'
+                            ? '🎨 Reve Remix'
                             : image.metadata.enhancement.model.includes('nano')
-                            ? '🎨 FAL.AI Nano Banana Pro'
+                            ? '🎨 Nano Banana'
                             : image.metadata.enhancement.model
                           }
                         </p>
-                        {image.metadata.enhancement.updated_at && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(image.metadata.enhancement.updated_at).toLocaleString('tr-TR')}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
+            </div>
 
+            {/* Right Column - Tools */}
+            <div className="space-y-6">
               {/* Image Tools Panel */}
-              <div className="border-t border-gray-200 pt-4">
-                <ImageToolsPanel
-                  image={image}
-                  onShowOriginalChange={setShowOriginal}
-                />
-              </div>
+              <ImageToolsPanel
+                image={image}
+                onShowOriginalChange={setShowOriginal}
+              />
 
               {/* Quick Actions */}
               <div className="space-y-3 pt-4 border-t border-gray-200">
