@@ -166,18 +166,9 @@ export default function ImageModal({ image, onClose }) {
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column - Tools */}
-            <div className="space-y-6">
-              {/* Image Tools Panel */}
-              <ImageToolsPanel
-                image={image}
-                onShowOriginalChange={setShowOriginal}
-              />
-
-              {/* Quick Actions */}
-              <div className="space-y-3 pt-4 border-t border-gray-200">
+              {/* Quick Actions - Below Metadata */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
                   onClick={() => setShowShareModal(true)}
                   className="w-full flex items-center justify-center gap-2 btn-secondary"
@@ -201,6 +192,15 @@ export default function ImageModal({ image, onClose }) {
                   {t('common.download')} {showOriginal && `(${t('images.original')})`}
                 </a>
               </div>
+            </div>
+
+            {/* Right Column - Tools Only */}
+            <div>
+              {/* Image Tools Panel */}
+              <ImageToolsPanel
+                image={image}
+                onShowOriginalChange={setShowOriginal}
+              />
             </div>
           </div>
         </div>
